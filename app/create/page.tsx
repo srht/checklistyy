@@ -1,114 +1,138 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabaseClient'
 
-interface ChecklistItem {
-  content: string
-  completed: boolean
-}
-
-export default function CreatePage() {
-  const router = useRouter()
+export default function CreateChecklistPage() {
   const [title, setTitle] = useState('')
-  const [items, setItems] = useState<ChecklistItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [description, setDescription] = useState('')
+  const [items, setItems] = useState<string[]>([])
+  const [published, setPublished] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [message, setMessage] = useState('')
 
+  // Prefill from localStorage if navigated from homepage
   useEffect(() => {
-    const savedChecklist = localStorage.getItem('generatedChecklist')
-    if (savedChecklist) {
-      const { title, items } = JSON.parse(savedChecklist)
-      setTitle(title)
-      setItems(items.map((item: string) => ({ content: item, completed: false })))
-      // Clear the saved checklist
-      localStorage.removeItem('generatedChecklist')
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('generatedChecklist')
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved)
+          if (parsed.title) setTitle(parsed.title)
+          if (parsed.items) setItems(parsed.items)
+        } catch {}
+        localStorage.removeItem('generatedChecklist')
+      }
     }
-    setIsLoading(false)
   }, [])
 
-  const toggleItem = (index: number) => {
-    setItems(items.map((item, i) => 
-      i === index ? { ...item, completed: !item.completed } : item
-    ))
+  // AI'dan öneri getir
+  const fetchChecklistFromAI = async () => {
+    setAiLoading(true)
+    setMessage('')
+    setItems([])
+    try {
+      const res = await fetch('/api/generate-checklist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: title || description }),
+      })
+      const data = await res.json()
+      setItems(data.items || [])
+      if (!data.items?.length) setMessage('AI önerisi bulunamadı.')
+    } catch (e) {
+      setMessage('AI önerisi alınamadı.')
+    }
+    setAiLoading(false)
   }
 
-  const addItem = () => {
-    setItems([...items, { content: '', completed: false }])
+  const handleItemChange = (index: number, value: string) => {
+    setItems(items.map((item, i) => (i === index ? value : item)))
   }
 
-  const updateItem = (index: number, content: string) => {
-    setItems(items.map((item, i) => 
-      i === index ? { ...item, content } : item
-    ))
-  }
+  const addItem = () => setItems([...items, ''])
+  const removeItem = (index: number) => setItems(items.filter((_, i) => i !== index))
 
-  const removeItem = (index: number) => {
-    setItems(items.filter((_, i) => i !== index))
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    )
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setMessage('')
+    const user = (await supabase.auth.getUser()).data.user
+    if (!user) {
+      setMessage('Giriş yapmalısınız!')
+      setLoading(false)
+      return
+    }
+    const { error } = await supabase.from('checklists').insert({
+      title,
+      description,
+      items,
+      author_id: user.id,
+      published,
+    })
+    setLoading(false)
+    if (error) setMessage('Hata: ' + error.message)
+    else setMessage('Checklist oluşturuldu!')
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4">
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Checklist Title"
-              className="w-full text-2xl font-bold mb-6 p-2 border-b-2 border-gray-200 focus:border-primary focus:outline-none"
-            />
-
-            <div className="space-y-4">
-              {items.map((item, index) => (
-                <div key={index} className="flex items-center space-x-4">
-                  <input
-                    type="checkbox"
-                    checked={item.completed}
-                    onChange={() => toggleItem(index)}
-                    className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary"
-                  />
-                  <input
-                    type="text"
-                    value={item.content}
-                    onChange={(e) => updateItem(index, e.target.value)}
-                    className="flex-1 p-2 border-b border-gray-200 focus:border-primary focus:outline-none"
-                  />
-                  <button
-                    onClick={() => removeItem(index)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
+    <div className="max-w-xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-4">Yeni Checklist Oluştur</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          className="w-full border p-2 rounded"
+          placeholder="Başlık"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          required
+        />
+        <textarea
+          className="w-full border p-2 rounded"
+          placeholder="Açıklama"
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+        />
+        <button
+          type="button"
+          onClick={fetchChecklistFromAI}
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+          disabled={aiLoading || !title}
+        >
+          {aiLoading ? 'Yükleniyor...' : 'AI ile öneri getir'}
+        </button>
+        <div>
+          <label className="font-semibold">Checklist Maddeleri:</label>
+          {items.map((item, i) => (
+            <div key={i} className="flex gap-2 my-1">
+              <input
+                className="flex-1 border p-2 rounded"
+                value={item}
+                onChange={e => handleItemChange(i, e.target.value)}
+                required
+              />
+              <button type="button" onClick={() => removeItem(i)} className="text-red-500">Sil</button>
             </div>
-
-            <div className="mt-6 space-x-4">
-              <button
-                onClick={addItem}
-                className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                Add Item
-              </button>
-              <button
-                onClick={() => router.push('/')}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
+          ))}
+          <button type="button" onClick={addItem} className="text-blue-500 mt-2">+ Madde Ekle</button>
         </div>
-      </div>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={published}
+            onChange={e => setPublished(e.target.checked)}
+          />
+          Herkes görebilsin mi?
+        </label>
+        <button
+          type="submit"
+          className="bg-primary text-white px-4 py-2 rounded"
+          disabled={loading}
+        >
+          {loading ? 'Kaydediliyor...' : 'Oluştur'}
+        </button>
+        {message && <div className="mt-2 text-center">{message}</div>}
+      </form>
     </div>
   )
 } 
