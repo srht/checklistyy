@@ -15,16 +15,16 @@ export default function Home() {
 
           <TypewriterInput />
 
-          <div className="space-x-4">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4">
             <Link
               href="/create"
-              className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+              className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors w-full md:w-auto text-center"
             >
               Create New Checklist
             </Link>
             <Link
               href="/browse"
-              className="bg-white text-primary border-2 border-primary px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+              className="bg-white text-primary border-2 border-primary px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors w-full md:w-auto text-center"
             >
               Browse Checklists
             </Link>
