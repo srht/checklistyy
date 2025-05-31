@@ -55,7 +55,7 @@ export default function Navbar() {
                 href="/my-checklists"
                 className="text-gray-600 hover:text-primary transition-colors"
               >
-                My Checklists
+                My Checklists 
               </Link>
             )}
             {user ? (
