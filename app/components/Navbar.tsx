@@ -43,7 +43,7 @@ export default function Navbar() {
               className="text-gray-600 hover:text-primary transition-colors"
             >
               Create
-            </Link>
+            </Link> 
             <Link
               href="/browse"
               className="text-gray-600 hover:text-primary transition-colors"
