@@ -123,6 +123,15 @@ export default function ChecklistDetailPage() {
     else setMessage('Liste başarıyla kopyalandı! Listelerim sayfasında görebilirsin.');
   };
 
+  // WhatsApp paylaşım fonksiyonu
+  const handleShareWhatsApp = () => {
+    if (!checklist || !checklist.published) return;
+    const shareUrl = `${window.location.origin}/checklist/${checklist.id}`;
+    const text = `Check out this checklist: ${checklist.title} - ${shareUrl}`;
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   if (loading) return <div className="p-6">Yükleniyor...</div>
   if (!checklist) return <div className="p-6">Checklist bulunamadı.</div>
 
@@ -147,11 +156,31 @@ export default function ChecklistDetailPage() {
         </h1>
       )}
       <div className="mb-2 text-gray-500">{checklist.description}</div>
+      <div className="mb-4 flex gap-2">
+        {!isOwner && user && (
+          <button
+            onClick={handleCopy}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            type="button"
+          >
+            Kopyala
+          </button>
+        )}
+        {checklist.published && (
+          <button
+            onClick={handleShareWhatsApp}
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+            type="button"
+          >
+            WhatsApp'ta Paylaş
+          </button>
+        )}
+      </div>
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId="checklist-items">
           {(provided) => (
             <ul
-              className="pl-6 mb-4"
+              className="mb-4"
               {...provided.droppableProps}
               ref={provided.innerRef}
             >
@@ -243,15 +272,6 @@ export default function ChecklistDetailPage() {
           type="button"
         >
           {saving ? 'Kaydediliyor...' : 'Kaydet'}
-        </button>
-      )}
-      {!isOwner && user && (
-        <button
-          onClick={handleCopy}
-          className="mb-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          type="button"
-        >
-          Kopyala
         </button>
       )}
       {message && <div className="mt-2 text-center">{message}</div>}
