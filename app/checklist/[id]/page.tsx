@@ -132,6 +132,23 @@ export default function ChecklistDetailPage() {
     window.open(whatsappUrl, '_blank');
   };
 
+  // Listeyi silme fonksiyonu
+  const handleDeleteChecklist = async () => {
+    if (!isOwner || !checklist || !window.confirm('Bu checklisti silmek istediğinize emin misiniz?')) return;
+    setLoading(true);
+    const { error } = await supabase
+      .from('checklists')
+      .delete()
+      .eq('id', id);
+    setLoading(false);
+    if (error) setMessage('Silme hatası: ' + error.message);
+    else {
+      setMessage('Checklist silindi.');
+      // Silme başarılı olursa Listelerim sayfasına yönlendir
+      window.location.href = '/my-checklists'; 
+    }
+  };
+
   if (loading) return <div className="p-6">Yükleniyor...</div>
   if (!checklist) return <div className="p-6">Checklist bulunamadı.</div>
 
@@ -272,6 +289,15 @@ export default function ChecklistDetailPage() {
           type="button"
         >
           {saving ? 'Kaydediliyor...' : 'Kaydet'}
+        </button>
+      )}
+      {isOwner && (
+        <button
+          onClick={handleDeleteChecklist}
+          className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+          type="button"
+        >
+          Listeyi Sil
         </button>
       )}
       {message && <div className="mt-2 text-center">{message}</div>}
