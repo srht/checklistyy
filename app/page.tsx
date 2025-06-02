@@ -1,7 +1,32 @@
+'use client'
+
 import Link from 'next/link'
 import TypewriterInput from './components/TypewriterInput'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function Home() {
+  const [recentChecklists, setRecentChecklists] = useState<any[]>([]);
+  const [loadingRecent, setLoadingRecent] = useState(true);
+
+  useEffect(() => {
+    const fetchRecentChecklists = async () => {
+      setLoadingRecent(true);
+      const { data, error } = await supabase
+        .from('checklists')
+        .select('id, title, description, created_at, items')
+        .eq('published', true)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (!error) {
+        setRecentChecklists(data || []);
+      }
+      setLoadingRecent(false);
+    };
+    fetchRecentChecklists();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="container mx-auto px-4 py-16">
@@ -50,6 +75,30 @@ export default function Home() {
               Work together with others on shared checklists
             </p>
           </div>
+        </div>
+
+        <div className="container mx-auto px-4 py-16">
+          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Recent Public Checklists</h2>
+          {loadingRecent ? (
+            <div className="text-center">Loading recent checklists...</div>
+          ) : recentChecklists.length === 0 ? (
+            <div className="text-center text-gray-600">No public checklists found yet.</div>
+          ) : (
+            <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recentChecklists.map(list => (
+                <li key={list.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                  <Link href={`/checklist/${list.id}`}>
+                    <h3 className="text-xl font-semibold mb-2 text-primary hover:underline cursor-pointer">{list.title}</h3>
+                  </Link>
+                  <p className="text-gray-600 text-sm mb-3 line-clamp-3">{list.description || 'No description.'}</p>
+                  {list.items && list.items.length > 0 && (
+                    <p className="text-gray-800 text-sm mt-2">{list.items[0]}</p>
+                  )}
+                  <p className="text-xs text-gray-400">Created: {new Date(list.created_at).toLocaleDateString()}</p>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>

@@ -45,11 +45,7 @@ export async function POST(request: Request) {
     if (!checklistItems.length) {
       // Fallback items if the API response is empty or invalid
       checklistItems = [
-        "Research and gather information",
-        "Create a detailed plan",
-        "Set specific goals and deadlines",
-        "Organize resources and materials",
-        "Review and adjust as needed"
+        "Nothing to do"
       ]
     }
 
@@ -59,11 +55,7 @@ export async function POST(request: Request) {
     // Return fallback items in case of error
     return NextResponse.json({
       items: [
-        "Research and gather information",
-        "Create a detailed plan",
-        "Set specific goals and deadlines",
-        "Organize resources and materials",
-        "Review and adjust as needed"
+        "Nothing to do"
       ]
     })
   }
