@@ -18,7 +18,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-center justify-center gap-4">
             <Link
               href="/create"
-              className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors w-full md:w-auto text-center"
+              className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors w-full md:w-auto text-center"
             >
               Create New Checklist
             </Link>

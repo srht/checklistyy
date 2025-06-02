@@ -92,7 +92,7 @@ export default function ChecklistDetailPage() {
     setSaving(false)
     setEditingTitle(false)
     if (error) setMessage('Hata: ' + error.message)
-    else setMessage('Kaydedildi!')
+    else setMessage('Saved!')
     setChecklist({ ...checklist, title: titleInput })
   }
 
@@ -113,14 +113,14 @@ export default function ChecklistDetailPage() {
   const handleCopy = async () => {
     if (!user || !checklist) return;
     const { error } = await supabase.from('checklists').insert({
-      title: checklist.title + ' (Kopya)',
+      title: checklist.title + ' (Copy)',
       description: checklist.description,
       items: checklist.items,
       author_id: user.id,
       published: false,
     });
-    if (error) setMessage('Kopyalama hatası: ' + error.message);
-    else setMessage('Liste başarıyla kopyalandı! Listelerim sayfasında görebilirsin.');
+    if (error) setMessage('Copy error: ' + error.message);
+    else setMessage('List copied! You can see it in My checklists page.');
   };
 
   // WhatsApp paylaşım fonksiyonu
@@ -141,16 +141,16 @@ export default function ChecklistDetailPage() {
       .delete()
       .eq('id', id);
     setLoading(false);
-    if (error) setMessage('Silme hatası: ' + error.message);
+    if (error) setMessage('Delete error: ' + error.message);
     else {
-      setMessage('Checklist silindi.');
+      setMessage('Checklist deleted.');
       // Silme başarılı olursa Listelerim sayfasına yönlendir
       window.location.href = '/my-checklists'; 
     }
   };
 
-  if (loading) return <div className="p-6">Yükleniyor...</div>
-  if (!checklist) return <div className="p-6">Checklist bulunamadı.</div>
+  if (loading) return <div className="p-6">Loading...</div>
+  if (!checklist) return <div className="p-6">Checklist can't be found.</div>
 
   const isOwner = user && checklist.author_id === user.id
 
@@ -180,7 +180,7 @@ export default function ChecklistDetailPage() {
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             type="button"
           >
-            Kopyala
+            Copy
           </button>
         )}
         {checklist.published && (
@@ -189,7 +189,7 @@ export default function ChecklistDetailPage() {
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
             type="button"
           >
-            WhatsApp'ta Paylaş
+            Share on WhatsApp
           </button>
         )}
       </div>
@@ -212,14 +212,14 @@ export default function ChecklistDetailPage() {
                     <li
                       ref={provided.innerRef}
                       {...provided.draggableProps}
-                      className={`flex items-center gap-2 my-2 bg-white ${snapshot.isDragging ? 'shadow-lg' : ''}`}
+                      {...provided.dragHandleProps}
+                      className={`flex items-center gap-2 my-4 text-lg bg-white ${snapshot.isDragging ? 'shadow-lg' : ''}`}
                     >
                       {isOwner && (
                         <>
                           <span
                             className="cursor-move text-gray-400"
-                            title="Sürükle"
-                            {...provided.dragHandleProps}
+                            title="Move"
                           >
                             &#9776;
                           </span>
@@ -228,7 +228,7 @@ export default function ChecklistDetailPage() {
                             className="text-red-500 text-xs border px-2 py-1 rounded hover:bg-red-100"
                             type="button"
                           >
-                            Sil
+                            Delete
                           </button>
                         </>
                       )}
@@ -252,7 +252,7 @@ export default function ChecklistDetailPage() {
                             className="text-green-600 text-xs border px-2 py-1 rounded hover:bg-green-100"
                             type="button"
                           >
-                            Kaydet
+                            Save
                           </button>
                         </>
                       ) : (
@@ -288,7 +288,7 @@ export default function ChecklistDetailPage() {
           disabled={saving}
           type="button"
         >
-          {saving ? 'Kaydediliyor...' : 'Kaydet'}
+          {saving ? 'Saving...' : 'Save'}
         </button>
       )}
       {isOwner && (
@@ -297,15 +297,15 @@ export default function ChecklistDetailPage() {
           className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
           type="button"
         >
-          Listeyi Sil
+          Remove Checklist
         </button>
       )}
       {message && <div className="mt-2 text-center">{message}</div>}
       <div className="text-xs text-gray-400 mt-4">
-        Oluşturulma: {new Date(checklist.created_at).toLocaleString()}
+        Created at: {new Date(checklist.created_at).toLocaleString()}
       </div>
-      <div className="text-xs text-gray-400">
-        Yayın durumu: {checklist.published ? 'Yayında' : 'Gizli'}
+      <div className="text-xs text-gray-800">
+        {checklist.published ? 'Published' : 'Private'}
       </div>
     </div>
   )

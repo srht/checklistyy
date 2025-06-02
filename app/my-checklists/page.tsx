@@ -31,13 +31,13 @@ export default function MyChecklistsPage() {
     setChecklists(checklists.map(c => c.id === id ? { ...c, published: !published } : c))
   }
 
-  if (loading) return <div className="p-6">Yükleniyor...</div>
-  if (!user) return <div className="p-6">Giriş yapmalısınız.</div>
+  if (loading) return <div className="p-6">Loading...</div>
+  if (!user) return <div className="p-6">You need to sign in.</div>
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Listelerim</h1>
-      {checklists.length === 0 && <div>Henüz checklist yok.</div>}
+      <h1 className="text-2xl font-bold mb-4">My checklists</h1>
+      {checklists.length === 0 && <div>No checklist yet.</div>}
       <ul className="space-y-4">
         {checklists.map(list => (
           <li key={list.id} className="border rounded p-4 flex justify-between items-center">

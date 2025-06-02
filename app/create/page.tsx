@@ -40,9 +40,9 @@ export default function CreateChecklistPage() {
       })
       const data = await res.json()
       setItems(data.items || [])
-      if (!data.items?.length) setMessage('AI önerisi bulunamadı.')
+      if (!data.items?.length) setMessage('AI suggestions not found.')
     } catch (e) {
-      setMessage('AI önerisi alınamadı.')
+      setMessage('AI suggestions not found.')
     }
     setAiLoading(false)
   }
@@ -60,7 +60,7 @@ export default function CreateChecklistPage() {
     setMessage('')
     const user = (await supabase.auth.getUser()).data.user
     if (!user) {
-      setMessage('Giriş yapmalısınız!')
+      setMessage('You need to sign in!')
       setLoading(false)
       return
     }
@@ -72,24 +72,24 @@ export default function CreateChecklistPage() {
       published,
     })
     setLoading(false)
-    if (error) setMessage('Hata: ' + error.message)
-    else setMessage('Checklist oluşturuldu!')
+    if (error) setMessage('Error: ' + error.message)
+    else setMessage('Checklist created!')
   }
 
   return (
     <div className="max-w-xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Yeni Checklist Oluştur</h1>
+      <h1 className="text-2xl font-bold mb-4">Create new checklist</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           className="w-full border p-2 rounded"
-          placeholder="Başlık"
+          placeholder="Title"
           value={title}
           onChange={e => setTitle(e.target.value)}
           required
         />
         <textarea
           className="w-full border p-2 rounded"
-          placeholder="Açıklama"
+          placeholder="Description"
           value={description}
           onChange={e => setDescription(e.target.value)}
         />
@@ -99,10 +99,10 @@ export default function CreateChecklistPage() {
           className="bg-blue-500 text-white px-4 py-2 rounded"
           disabled={aiLoading || !title}
         >
-          {aiLoading ? 'Yükleniyor...' : 'AI ile öneri getir'}
+          {aiLoading ? 'Loading...' : 'Get AI suggestions'}
         </button>
         <div>
-          <label className="font-semibold">Checklist Maddeleri:</label>
+          <label className="font-semibold">Checklist Items:</label>
           {items.map((item, i) => (
             <div key={i} className="flex gap-2 my-1">
               <input
@@ -111,10 +111,10 @@ export default function CreateChecklistPage() {
                 onChange={e => handleItemChange(i, e.target.value)}
                 required
               />
-              <button type="button" onClick={() => removeItem(i)} className="text-red-500">Sil</button>
+              <button type="button" onClick={() => removeItem(i)} className="text-red-500">Delete</button>
             </div>
           ))}
-          <button type="button" onClick={addItem} className="text-blue-500 mt-2">+ Madde Ekle</button>
+          <button type="button" onClick={addItem} className="text-blue-500 mt-2">+ Add item</button>
         </div>
         <label className="flex items-center gap-2">
           <input
@@ -122,14 +122,14 @@ export default function CreateChecklistPage() {
             checked={published}
             onChange={e => setPublished(e.target.checked)}
           />
-          Herkes görebilsin mi?
+          Let everyone see it?
         </label>
         <button
           type="submit"
           className="bg-primary text-white px-4 py-2 rounded"
           disabled={loading}
         >
-          {loading ? 'Kaydediliyor...' : 'Oluştur'}
+          {loading ? 'Saving...' : 'Create'}
         </button>
         {message && <div className="mt-2 text-center">{message}</div>}
       </form>

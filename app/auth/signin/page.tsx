@@ -8,7 +8,7 @@ export default function SignIn() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+        redirectTo: process.env.NEXT_PUBLIC_LOGIN_REDIRECT_URL || (typeof window !== 'undefined' ? window.location.origin : undefined),
       },
     })
   }
