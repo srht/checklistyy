@@ -1,8 +1,6 @@
 // netlify/functions/openai-proxy.js
-import OpenAI from 'openai';
-const openai = new OpenAI({
-  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY
-})
+const { OpenAI } = require("openai");
+
 exports.handler = async (event, context) => {
   // This function will act as a proxy for the OpenAI API.
   // It will receive requests from the client, forward them to OpenAI,
@@ -15,57 +13,56 @@ exports.handler = async (event, context) => {
       body: 'Method Not Allowed',
     };
   }
+
   try {
-    const { subject } = await event.request.json()
+    // Parse the request body
+    const data = JSON.parse(event.body);
 
-    const prompt = `Create a detailed checklist for: ${subject}. 
-    Format the response as a JSON array of strings, where each string is a checklist item.
-    Make the items specific, actionable, and organized in a logical order.
-    Include 5-10 items. Give items in the language of ${subject} was written in.` 
+    // Get your OpenAI API key securely from Netlify environment variables.
+    const openaiApiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
 
-    const completion = await openai.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: "You are a helpful assistant that creates detailed, practical checklists. Format your response as a JSON object with an 'items' array containing strings. "
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      model: "gpt-3.5-turbo",
-      response_format: { type: "json_object" }
-    })
-
-    const response = completion.choices[0].message.content
-    console.log('Raw API response:', response) // Debug log
-
-    let checklistItems
-    try {
-      const parsedResponse = JSON.parse(response || '{"items": []}')
-      checklistItems = Array.isArray(parsedResponse.items) ? parsedResponse.items : []
-    } catch (parseError) {
-      console.error('Error parsing response:', parseError)
-      checklistItems = []
+    if (!openaiApiKey) {
+      return {
+        statusCode: 500,
+        body: 'OpenAI API key not configured.',
+      };
     }
 
-    if (!checklistItems.length) {
-      // Fallback items if the API response is empty or invalid
-      checklistItems = [
-        "Nothing to do"
-      ]
+    // Initialize OpenAI SDK
+    const openai = new OpenAI({ apiKey: openaiApiKey });
+
+    // Extract parameters from the client request
+    const { prompt, model = 'gpt-3.5-turbo', max_tokens = 500 } = data;
+
+    if (!prompt) {
+        return {
+            statusCode: 400,
+            body: 'Missing prompt in request body.',
+        };
     }
 
-    return NextResponse.json({ items: checklistItems })
+    // Make the request to the OpenAI API using the SDK
+    const completion = await openai.completions.create({
+      model: model,
+      prompt: prompt,
+      max_tokens: max_tokens,
+    });
+
+    // Send the response back to the client
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(completion),
+    };
+
   } catch (error) {
-    console.error('Error generating checklist:', error)
-    // Return fallback items in case of error
-    return NextResponse.json({
-      items: [
-        "Nothing to do"
-      ]
-    })
+    console.error('Serverless function error:', error);
+    return {
+      statusCode: 500,
+      body: `Server error: ${error.message}`,
+    };
   }
 };
 
