@@ -52,7 +52,7 @@ export default function MyChecklistsPage() {
               onClick={() => togglePublished(list.id, list.published)}
               className={`ml-4 px-3 py-1 rounded ${list.published ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-700'}`}
             >
-              {list.published ? 'Yayında' : 'Gizli'}
+              {list.published ? 'Published' : 'Private'}
             </button>
           </li>
         ))}

@@ -33,16 +33,37 @@ export default function CreateChecklistPage() {
     setMessage('')
     setItems([])
     try {
-      const res = await fetch('/api/generate-checklist', {
+      const res = await fetch('/.netlify/functions/openai-proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject: title || description }),
+        body: JSON.stringify({
+          prompt: `Generate a checklist for: ${title || description}`,
+          model: 'gpt-3.5-turbo',
+          max_tokens: 500,
+        }),
       })
-      const data = await res.json()
-      setItems(data.items || [])
-      if (!data.items?.length) setMessage('AI suggestions not found.')
-    } catch (e) {
+
+      if (!res.ok) {
+        const errorBody = await res.text()
+        throw new Error(`HTTP error! status: ${res.status}, body: ${errorBody}`)
+      }
+
+      const data: any = await res.json()
+
+      const aiText = data.choices?.[0]?.text || data.choices?.[0]?.message?.content
+
+      if (aiText) {
+        const generatedItems = aiText.split(/\n\s*\d*\.\s*/).map(item => item.trim()).filter(item => item.length > 0)
+        setItems(generatedItems)
+        if (!generatedItems.length) setMessage('AI suggestions not found or empty.')
+      } else {
+        setMessage('AI suggestions not found or format unexpected.')
+        console.error('Unexpected AI response format:', data)
+      }
+
+    } catch (e: any) {
       setMessage('AI suggestions not found.')
+      console.error('Error fetching AI suggestions:', e)
     }
     setAiLoading(false)
   }
