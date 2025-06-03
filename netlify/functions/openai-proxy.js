@@ -19,7 +19,7 @@ exports.handler = async (event, context) => {
     const data = JSON.parse(event.body);
 
     // Get your OpenAI API key securely from Netlify environment variables.
-    const openaiApiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+    const openaiApiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY; // Use process.env directly for Netlify functions
 
     if (!openaiApiKey) {
       return {
@@ -41,10 +41,12 @@ exports.handler = async (event, context) => {
         };
     }
 
-    // Make the request to the OpenAI API using the SDK
-    const completion = await openai.completions.create({
+    // Make the request to the OpenAI API using the SDK (Chat Completions endpoint)
+    const completion = await openai.chat.completions.create({
       model: model,
-      prompt: prompt,
+      messages: [
+        { role: "user", content: prompt }
+      ], // Use messages array for chat models
       max_tokens: max_tokens,
     });
 
