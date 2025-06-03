@@ -53,7 +53,7 @@ export default function CreateChecklistPage() {
       const aiText = data.choices?.[0]?.text || data.choices?.[0]?.message?.content
 
       if (aiText) {
-        const generatedItems = aiText.split(/\n\s*\d*\.\s*/).map(item => item.trim()).filter(item => item.length > 0)
+        const generatedItems = aiText.split(/\n\s*\d*\.\s*/).map((item: string) => item.trim()).filter((item: string) => item.length > 0)
         setItems(generatedItems)
         if (!generatedItems.length) setMessage('AI suggestions not found or empty.')
       } else {
