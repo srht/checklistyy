@@ -80,7 +80,7 @@ export default function TypewriterInput() {
       }))
       
       router.push('/create')
-      
+
     } catch (error) {
       console.error('Error generating checklist:', error)
       setError('Failed to generate checklist. Please try again.')
@@ -116,7 +116,7 @@ export default function TypewriterInput() {
         <button
           onClick={generateChecklist}
           disabled={isLoading || !text.trim()}
-          className="absolute right-3 top-1/2 -translate-y-1/2 bg-primary text-white p-3 rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="absolute right-3 top-1/2 -translate-y-1/2 bg-primary text-white p-3 rounded-full hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <FaSpinner className="w-5 h-5 animate-spin" />

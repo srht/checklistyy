@@ -88,7 +88,7 @@ export default function Home() {
               {recentChecklists.map(list => (
                 <li key={list.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                   <Link href={`/checklist/${list.id}`}>
-                    <h3 className="text-xl font-semibold mb-2 text-primary hover:underline cursor-pointer">{list.title}</h3>
+                    <h3 className="text-xl font-semibold mb-2 text-lime-300 hover:underline cursor-pointer">{list.title}</h3>
                   </Link>
                   <p className="text-gray-600 text-sm mb-3 line-clamp-3">{list.description || 'No description.'}</p>
                   {list.items && list.items.length > 0 && (

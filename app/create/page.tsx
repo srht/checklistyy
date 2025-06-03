@@ -89,7 +89,7 @@ export default function CreateChecklistPage() {
         <button
           type="button"
           onClick={handleFetchAISuggestions}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          className="bg-green-500 text-white px-4 py-2 rounded"
           disabled={aiLoading || !title}
         >
           {aiLoading ? 'Loading...' : 'Get AI suggestions'}
@@ -107,6 +107,7 @@ export default function CreateChecklistPage() {
               <button type="button" onClick={() => removeItem(i)} className="text-red-500">Delete</button>
             </div>
           ))}
+          <br />
           <button type="button" onClick={addItem} className="text-blue-500 mt-2">+ Add item</button>
         </div>
         <label className="flex items-center gap-2">
@@ -119,7 +120,7 @@ export default function CreateChecklistPage() {
         </label>
         <button
           type="submit"
-          className="bg-primary text-white px-4 py-2 rounded"
+          className="bg-primary text-black px-4 py-2 rounded"
           disabled={loading}
         >
           {loading ? 'Saving...' : 'Create'}

@@ -134,7 +134,7 @@ export default function ChecklistDetailPage() {
 
   // Listeyi silme fonksiyonu
   const handleDeleteChecklist = async () => {
-    if (!isOwner || !checklist || !window.confirm('Bu checklisti silmek istediğinize emin misiniz?')) return;
+    if (!isOwner || !checklist || !window.confirm('Do you want to delete this checklist?')) return;
     setLoading(true);
     const { error } = await supabase
       .from('checklists')
@@ -275,7 +275,7 @@ export default function ChecklistDetailPage() {
       {isOwner && deletedItems.length > 0 && (
         <button
           onClick={handleUndo}
-          className="mb-2 text-blue-500 text-xs border px-2 py-1 rounded hover:bg-blue-100"
+          className="mb-2 text-green-500 text-xs border px-2 py-1 rounded hover:bg-blue-100"
           type="button"
         >
           Geri Al
