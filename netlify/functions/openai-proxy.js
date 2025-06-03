@@ -18,7 +18,7 @@ exports.handler = async (event, context) => {
     const data = JSON.parse(event.body);
 
     // TODO: Get your OpenAI API key securely from Netlify environment variables.
-    const openaiApiKey = process.env.OPENAI_API_KEY;
+    const openaiApiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
 
     if (!openaiApiKey) {
       return {
@@ -34,7 +34,7 @@ exports.handler = async (event, context) => {
     // You will need to structure this based on the specific OpenAI API endpoint you are using
     const openaiPayload = {
       // Example: For completions endpoint
-      model: data.model || "text-davinci-003", // Or the model passed from client
+      model: data.model || "gpt-3.5-turbo", // Or the model passed from client
       prompt: data.prompt, // The prompt from the client
       max_tokens: data.max_tokens || 150, // Or the max_tokens passed from client
       // Add other parameters as needed by the OpenAI API endpoint
