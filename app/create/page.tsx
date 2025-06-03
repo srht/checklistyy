@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import { fetchChecklistSuggestions } from '@/lib/ai'
 
 export default function CreateChecklistPage() {
   const [title, setTitle] = useState('')
@@ -28,43 +29,14 @@ export default function CreateChecklistPage() {
   }, [])
 
   // AI'dan öneri getir
-  const fetchChecklistFromAI = async () => {
+  const handleFetchAISuggestions = async () => {
     setAiLoading(true)
     setMessage('')
     setItems([])
-    try {
-      const res = await fetch('/.netlify/functions/openai-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: `Generate a checklist for: ${title || description}`,
-          model: 'gpt-3.5-turbo',
-          max_tokens: 500,
-        }),
-      })
-
-      if (!res.ok) {
-        const errorBody = await res.text()
-        throw new Error(`HTTP error! status: ${res.status}, body: ${errorBody}`)
-      }
-
-      const data: any = await res.json()
-
-      const aiText = data.choices?.[0]?.text || data.choices?.[0]?.message?.content
-
-      if (aiText) {
-        const generatedItems = aiText.split(/\n\s*\d*\.\s*/).map((item: string) => item.trim()).filter((item: string) => item.length > 0)
-        setItems(generatedItems)
-        if (!generatedItems.length) setMessage('AI suggestions not found or empty.')
-      } else {
-        setMessage('AI suggestions not found or format unexpected.')
-        console.error('Unexpected AI response format:', data)
-      }
-
-    } catch (e: any) {
-      setMessage('AI suggestions not found.')
-      console.error('Error fetching AI suggestions:', e)
-    }
+    const prompt = title || description
+    const generatedItems = await fetchChecklistSuggestions(prompt)
+    setItems(generatedItems)
+    if (!generatedItems.length) setMessage('AI suggestions not found.')
     setAiLoading(false)
   }
 
@@ -116,7 +88,7 @@ export default function CreateChecklistPage() {
         />
         <button
           type="button"
-          onClick={fetchChecklistFromAI}
+          onClick={handleFetchAISuggestions}
           className="bg-blue-500 text-white px-4 py-2 rounded"
           disabled={aiLoading || !title}
         >

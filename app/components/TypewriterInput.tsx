@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { FaSearch, FaSpinner } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
+import { fetchChecklistSuggestions } from '@/lib/ai'
 
 const examples = [
   'Plan a summer vacation to Bali...',
@@ -72,31 +73,14 @@ export default function TypewriterInput() {
     setError('')
 
     try {
-      const response = await fetch('/api/generate-checklist', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ subject: text }),
-      })
 
-      if (!response.ok) {
-        throw new Error('Failed to generate checklist')
-      }
-
-      const data = await response.json()
+      localStorage.setItem('generatedChecklist', JSON.stringify({
+        title: text,
+        items: []
+      }))
       
-      if (data.items && data.items.length > 0) {
-        // Store the generated items in localStorage temporarily
-        localStorage.setItem('generatedChecklist', JSON.stringify({
-          title: text,
-          items: data.items
-        }))
-        // Navigate to the create page
-        router.push('/create')
-      } else {
-        throw new Error('No items generated')
-      }
+      router.push('/create')
+      
     } catch (error) {
       console.error('Error generating checklist:', error)
       setError('Failed to generate checklist. Please try again.')
