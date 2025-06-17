@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
@@ -223,13 +223,6 @@ export default function ChecklistDetailPage() {
                           >
                             &#9776;
                           </span>
-                          <button
-                            onClick={() => handleDelete(i)}
-                            className="text-red-500 text-xs border px-2 py-1 rounded hover:bg-red-100"
-                            type="button"
-                          >
-                            Delete
-                          </button>
                         </>
                       )}
                       <input
@@ -240,20 +233,39 @@ export default function ChecklistDetailPage() {
                       />
                       {isOwner && editingItemIndex === i ? (
                         <>
-                          <input
-                            className="border p-1 rounded flex-1"
+                          <textarea
+                            ref={el => {
+                              if (el) {
+                                el.style.height = 'auto';
+                                el.style.height = el.scrollHeight + 'px';
+                              }
+                            }}
+                            className="border p-1 rounded flex-1 resize-none overflow-hidden"
                             value={itemInput}
-                            onChange={e => setItemInput(e.target.value)}
+                            onChange={e => {
+                              setItemInput(e.target.value);
+                              const el = e.target as HTMLTextAreaElement;
+                              el.style.height = 'auto';
+                              el.style.height = el.scrollHeight + 'px';
+                            }}
                             onBlur={handleSaveItem}
                             autoFocus
                           />
                           <button
                             onClick={handleSaveItem}
-                            className="text-green-600 text-xs border px-2 py-1 rounded hover:bg-green-100"
+                            className="text-green-600 text-xs border px-2 py-1 mr-2 rounded hover:bg-green-100"
                             type="button"
                           >
                             Save
                           </button>
+                          <button
+                            onClick={() => handleDelete(i)}
+                            className="text-red-500 text-xs border px-2 py-1 rounded hover:bg-red-100"
+                            type="button"
+                          >
+                            Delete
+                          </button>
+                          
                         </>
                       ) : (
                         <span
@@ -284,7 +296,7 @@ export default function ChecklistDetailPage() {
       {isOwner && (
         <button
           onClick={handleSave}
-          className="ml-2 bg-primary text-white px-4 py-2 rounded"
+          className="ml-2 bg-primary text-white px-4 py-2 mr-2 rounded"
           disabled={saving}
           type="button"
         >
