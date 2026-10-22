@@ -3,28 +3,14 @@
 import Link from 'next/link'
 import { FaCheckSquare } from 'react-icons/fa'
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { useSession, signOut } from 'next-auth/react'
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const { data: session } = useSession()
+  const user = session?.user ?? null
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
-    // Listen for auth changes (login/logout)
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-    return () => {
-      listener?.subscription.unsubscribe()
-    }
-  }, [])
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-    window.location.href = '/auth/signin'
-  }
+  const handleSignOut = () => signOut({ callbackUrl: '/auth/signin' })
 
   return (
     <nav className="bg-white shadow-sm">
@@ -64,18 +50,18 @@ export default function Navbar() {
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                   className="flex items-center space-x-2 text-gray-600 hover:text-primary transition-colors"
                 >
-                  {user.user_metadata?.avatar_url ? (
+                  {user.image ? (
                     <img
-                      src={user.user_metadata.avatar_url}
-                      alt={user.user_metadata.full_name || 'User'}
+                      src={user.image}
+                      alt={user.name || 'User'}
                       className="w-8 h-8 rounded-full"
                     />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
-                      {user.user_metadata?.full_name?.[0] || 'U'}
+                      {user.name?.[0] || 'U'}
                     </div>
                   )}
-                  <span>{user.user_metadata?.full_name || user.email}</span>
+                  <span>{user.name || user.email}</span>
                 </button>
 
                 {isMenuOpen && (

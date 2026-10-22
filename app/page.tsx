@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import TypewriterInput from './components/TypewriterInput'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
 
 export default function Home() {
   const [recentChecklists, setRecentChecklists] = useState<any[]>([]);
@@ -12,16 +11,8 @@ export default function Home() {
   useEffect(() => {
     const fetchRecentChecklists = async () => {
       setLoadingRecent(true);
-      const { data, error } = await supabase
-        .from('checklists')
-        .select('id, title, description, created_at, items')
-        .eq('published', true)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (!error) {
-        setRecentChecklists(data || []);
-      }
+      const res = await fetch('/api/checklists?limit=5');
+      if (res.ok) setRecentChecklists(await res.json());
       setLoadingRecent(false);
     };
     fetchRecentChecklists();

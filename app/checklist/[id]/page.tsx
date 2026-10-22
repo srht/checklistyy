@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
+import { useSession } from 'next-auth/react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 
 export default function ChecklistDetailPage() {
@@ -10,7 +10,8 @@ export default function ChecklistDetailPage() {
   const [checklist, setChecklist] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [checked, setChecked] = useState<boolean[]>([])
-  const [user, setUser] = useState<any>(null)
+  const { data: session } = useSession()
+  const user = session?.user
   const [deletedItems, setDeletedItems] = useState<{item: string, index: number}[]>([])
   const [message, setMessage] = useState('')
   const [saving, setSaving] = useState(false)
@@ -21,18 +22,14 @@ export default function ChecklistDetailPage() {
 
   useEffect(() => {
     const fetchChecklist = async () => {
-      const { data } = await supabase
-        .from('checklists')
-        .select('*')
-        .eq('id', id)
-        .single()
+      const res = await fetch(`/api/checklists/${id}`)
+      const data = res.ok ? await res.json() : null
       setChecklist(data)
       setTitleInput(data?.title || '')
       setLoading(false)
       if (data?.items) setChecked(new Array(data.items.length).fill(false))
     }
     fetchChecklist()
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
   }, [id])
 
   const handleCheck = (idx: number) => {
@@ -85,13 +82,14 @@ export default function ChecklistDetailPage() {
   const handleSave = async () => {
     setSaving(true)
     setMessage('')
-    const { error } = await supabase
-      .from('checklists')
-      .update({ items: checklist.items, title: titleInput })
-      .eq('id', id)
+    const res = await fetch(`/api/checklists/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: checklist.items, title: titleInput }),
+    })
     setSaving(false)
     setEditingTitle(false)
-    if (error) setMessage('Hata: ' + error.message)
+    if (!res.ok) setMessage('Hata: ' + res.statusText)
     else setMessage('Saved!')
     setChecklist({ ...checklist, title: titleInput })
   }
@@ -112,14 +110,17 @@ export default function ChecklistDetailPage() {
 
   const handleCopy = async () => {
     if (!user || !checklist) return;
-    const { error } = await supabase.from('checklists').insert({
-      title: checklist.title + ' (Copy)',
-      description: checklist.description,
-      items: checklist.items,
-      author_id: user.id,
-      published: false,
+    const res = await fetch('/api/checklists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: checklist.title + ' (Copy)',
+        description: checklist.description,
+        items: checklist.items,
+        published: false,
+      }),
     });
-    if (error) setMessage('Copy error: ' + error.message);
+    if (!res.ok) setMessage('Copy error: ' + res.statusText);
     else setMessage('List copied! You can see it in My checklists page.');
   };
 
@@ -136,12 +137,9 @@ export default function ChecklistDetailPage() {
   const handleDeleteChecklist = async () => {
     if (!isOwner || !checklist || !window.confirm('Do you want to delete this checklist?')) return;
     setLoading(true);
-    const { error } = await supabase
-      .from('checklists')
-      .delete()
-      .eq('id', id);
+    const res = await fetch(`/api/checklists/${id}`, { method: 'DELETE' });
     setLoading(false);
-    if (error) setMessage('Delete error: ' + error.message);
+    if (!res.ok) setMessage('Delete error: ' + res.statusText);
     else {
       setMessage('Checklist deleted.');
       // Silme başarılı olursa Listelerim sayfasına yönlendir

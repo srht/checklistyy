@@ -1,33 +1,26 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 
 export default function MyChecklistsPage() {
   const [checklists, setChecklists] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
+  const { data: session, status } = useSession()
+  const user = session?.user
 
   useEffect(() => {
-    const fetchData = async () => {
-      const { data: userData } = await supabase.auth.getUser()
-      setUser(userData.user)
-      if (userData.user) {
-        const { data, error } = await supabase
-          .from('checklists')
-          .select('*')
-          .eq('author_id', userData.user.id)
-          .order('created_at', { ascending: false })
-        if (!error) setChecklists(data || [])
-      }
-      setLoading(false)
-    }
-    fetchData()
-  }, [])
+    if (status === 'loading') return
+    if (!user) { setLoading(false); return }
+    fetch('/api/checklists?mine=1')
+      .then(r => (r.ok ? r.json() : []))
+      .then(setChecklists)
+      .finally(() => setLoading(false))
+  }, [status, user])
 
   const togglePublished = async (id: string, published: boolean) => {
-    await supabase.from('checklists').update({ published: !published }).eq('id', id)
+    await fetch(`/api/checklists/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ published: !published }) })
     setChecklists(checklists.map(c => c.id === id ? { ...c, published: !published } : c))
   }
 

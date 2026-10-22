@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { useSession } from 'next-auth/react'
 import { fetchChecklistSuggestions } from '@/lib/ai'
 
 export default function CreateChecklistPage() {
@@ -12,6 +12,7 @@ export default function CreateChecklistPage() {
   const [loading, setLoading] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const { data: session } = useSession()
 
   // Prefill from localStorage if navigated from homepage
   useEffect(() => {
@@ -51,21 +52,18 @@ export default function CreateChecklistPage() {
     e.preventDefault()
     setLoading(true)
     setMessage('')
-    const user = (await supabase.auth.getUser()).data.user
-    if (!user) {
+    if (!session?.user) {
       setMessage('You need to sign in!')
       setLoading(false)
       return
     }
-    const { error } = await supabase.from('checklists').insert({
-      title,
-      description,
-      items,
-      author_id: user.id,
-      published,
+    const res = await fetch('/api/checklists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, description, items, published }),
     })
     setLoading(false)
-    if (error) setMessage('Error: ' + error.message)
+    if (!res.ok) setMessage('Error: ' + ((await res.json().catch(() => ({}))).error || res.statusText))
     else setMessage('Checklist created!')
   }
 

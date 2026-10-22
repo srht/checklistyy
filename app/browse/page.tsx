@@ -1,17 +1,12 @@
 import Link from 'next/link'
-import { createClient } from '@supabase/supabase-js'
+import { pool } from '@/lib/db'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const dynamic = 'force-dynamic'
 
 export default async function BrowseChecklistsPage() {
-  const { data: checklists, error } = await supabase
-    .from('checklists')
-    .select('*')
-    .eq('published', true)
-    .order('created_at', { ascending: false })
+  const { rows: checklists } = await pool.query(
+    'select * from checklists where published = true order by created_at desc'
+  )
 
   return (
     <div className="max-w-3xl mx-auto p-6">

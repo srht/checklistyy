@@ -1,62 +1,79 @@
 import { NextResponse } from 'next/server'
-import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  //apiKey: process.env.OPENAI_API_KEY,
-  apiKey:'REDACTED'
-})
+const FALLBACK = ['Nothing to do']
+
+const SYSTEM =
+  "You are a helpful assistant that creates detailed, practical checklists. Respond only with a JSON object with an 'items' array containing strings."
+
+async function callClaude(prompt: string): Promise<string> {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY || '',
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5',
+      max_tokens: 1024,
+      system: SYSTEM,
+      messages: [
+        { role: 'user', content: prompt },
+        { role: 'assistant', content: '{' },
+      ],
+    }),
+  })
+  if (!res.ok) throw new Error(`Anthropic API ${res.status}: ${await res.text()}`)
+  const data = await res.json()
+  return '{' + (data.content?.[0]?.text ?? '')
+}
+
+async function callGemini(prompt: string): Promise<string> {
+  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-goog-api-key': process.env.GEMINI_API_KEY || '',
+    },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: SYSTEM }] },
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json' },
+    }),
+  })
+  if (!res.ok) throw new Error(`Gemini API ${res.status}: ${await res.text()}`)
+  const data = await res.json()
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+}
+
+function pickProvider(requested?: string): 'claude' | 'gemini' {
+  const p = (requested || process.env.AI_PROVIDER || '').toLowerCase()
+  if (p === 'gemini' || p === 'claude') return p
+  return !process.env.ANTHROPIC_API_KEY && process.env.GEMINI_API_KEY ? 'gemini' : 'claude'
+}
 
 export async function POST(request: Request) {
   try {
-    const { subject } = await request.json()
+    const { subject, provider } = await request.json()
 
-    const prompt = `Create a detailed checklist for: ${subject}. 
-    Format the response as a JSON array of strings, where each string is a checklist item.
+    const prompt = `Create a detailed checklist for: ${subject}.
     Make the items specific, actionable, and organized in a logical order.
-    Include 5-10 items. Give items in the language of ${subject} was written in.` 
+    Include 5-10 items. Give items in the language the subject was written in.`
 
-    const completion = await openai.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: "You are a helpful assistant that creates detailed, practical checklists. Format your response as a JSON object with an 'items' array containing strings. "
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      model: "gpt-3.5-turbo",
-      response_format: { type: "json_object" }
-    })
+    const text = pickProvider(provider) === 'gemini' ? await callGemini(prompt) : await callClaude(prompt)
 
-    const response = completion.choices[0].message.content
-    console.log('Raw API response:', response) // Debug log
-
-    let checklistItems
+    let items: string[] = []
     try {
-      const parsedResponse = JSON.parse(response || '{"items": []}')
-      checklistItems = Array.isArray(parsedResponse.items) ? parsedResponse.items : []
+      const parsed = JSON.parse(text)
+      items = Array.isArray(parsed.items) ? parsed.items : []
     } catch (parseError) {
       console.error('Error parsing response:', parseError)
-      checklistItems = []
     }
 
-    if (!checklistItems.length) {
-      // Fallback items if the API response is empty or invalid
-      checklistItems = [
-        "Nothing to do"
-      ]
-    }
-
-    return NextResponse.json({ items: checklistItems })
+    return NextResponse.json({ items: items.length ? items : FALLBACK })
   } catch (error) {
     console.error('Error generating checklist:', error)
-    // Return fallback items in case of error
-    return NextResponse.json({
-      items: [
-        "Nothing to do"
-      ]
-    })
+    return NextResponse.json({ items: FALLBACK })
   }
-} 
+}
