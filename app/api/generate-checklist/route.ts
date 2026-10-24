@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
 
-const FALLBACK = ['Nothing to do']
-
 const SYSTEM =
   "You are a helpful assistant that creates detailed, practical checklists. Respond only with a JSON object with an 'items' array containing strings."
 
@@ -15,7 +13,7 @@ async function callClaude(prompt: string): Promise<string> {
     },
     body: JSON.stringify({
       model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5',
-      max_tokens: 1024,
+      max_tokens: 3000,
       system: SYSTEM,
       messages: [
         { role: 'user', content: prompt },
@@ -57,9 +55,15 @@ export async function POST(request: Request) {
   try {
     const { subject, provider } = await request.json()
 
-    const prompt = `Create a detailed checklist for: ${subject}.
+    const prompt = `Create a detailed, magazine-style checklist for: ${subject}.
     Make the items specific, actionable, and organized in a logical order.
-    Include 5-10 items. Give items in the language the subject was written in.`
+    Include 5-10 items. Give items in the language the subject was written in.
+    Each item is ONE string using this light markdown, with lines separated by \\n:
+    Line 1: **Short bold title** (required)
+    Line 2: one or two sentences of practical tip or context.
+    Optional line: an image as ![caption](https://...) ONLY for items where a visual truly helps, and ONLY if you are confident of a real, stable direct image URL (e.g. upload.wikimedia.org). Never invent URLs; skip images when unsure.
+    Optional line: a helpful reference as [label](https://...) ONLY with well-known real URLs (e.g. Wikipedia, official sites). Never invent URLs.
+    Use at most 3 images in the whole list.`
 
     const text = pickProvider(provider) === 'gemini' ? await callGemini(prompt) : await callClaude(prompt)
 
@@ -71,9 +75,9 @@ export async function POST(request: Request) {
       console.error('Error parsing response:', parseError)
     }
 
-    return NextResponse.json({ items: items.length ? items : FALLBACK })
+    return NextResponse.json({ items })
   } catch (error) {
     console.error('Error generating checklist:', error)
-    return NextResponse.json({ items: FALLBACK })
+    return NextResponse.json({ error: 'Failed to generate checklist' }, { status: 500 })
   }
 }

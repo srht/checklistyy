@@ -28,22 +28,35 @@ export default function MyChecklistsPage() {
   if (!user) return <div className="p-6">You need to sign in.</div>
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">My checklists</h1>
-      {checklists.length === 0 && <div>No checklist yet.</div>}
-      <ul className="space-y-4">
+    <div className="mx-auto max-w-2xl p-6">
+      <div className="mb-6 flex items-end justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">My checklists</h1>
+          <p className="mt-1 text-sm text-gray-500">{checklists.length} checklists</p>
+        </div>
+        <Link href="/create" className="rounded-full bg-green-600 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-green-700">
+          + New
+        </Link>
+      </div>
+      {checklists.length === 0 && (
+        <div className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-400">
+          No checklist yet.
+        </div>
+      )}
+      <ul className="space-y-3">
         {checklists.map(list => (
-          <li key={list.id} className="border rounded p-4 flex justify-between items-center">
-            <div>
-              <Link href={`/checklist/${list.id}`}>
-                <div className="font-semibold hover:underline cursor-pointer">{list.title}</div>
-              </Link>
-              <div className="text-gray-500 text-sm">{list.description}</div>
-              <div className="text-xs text-gray-400">{new Date(list.created_at).toLocaleString()}</div>
-            </div>
+          <li key={list.id} className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:border-green-400 hover:shadow-md">
+            <Link href={`/checklist/${list.id}`} className="min-w-0 flex-1">
+              <div className="font-semibold">{list.title}</div>
+              {list.description && <div className="mt-1 line-clamp-2 text-sm text-gray-500">{list.description}</div>}
+              <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
+                {Array.isArray(list.items) && <span className="rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-700">{list.items.length} items</span>}
+                <span>{new Date(list.created_at).toLocaleString()}</span>
+              </div>
+            </Link>
             <button
               onClick={() => togglePublished(list.id, list.published)}
-              className={`ml-4 px-3 py-1 rounded ${list.published ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-700'}`}
+              className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${list.published ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
             >
               {list.published ? 'Published' : 'Private'}
             </button>
@@ -52,4 +65,4 @@ export default function MyChecklistsPage() {
       </ul>
     </div>
   )
-} 
+}

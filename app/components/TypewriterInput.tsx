@@ -73,12 +73,18 @@ export default function TypewriterInput() {
     setError('')
 
     try {
+      const items = await fetchChecklistSuggestions(text, 'gemini')
+
+      if (!items.length) {
+        setError('Failed to generate checklist. Please try again.')
+        return
+      }
 
       localStorage.setItem('generatedChecklist', JSON.stringify({
         title: text,
-        items: []
+        items
       }))
-      
+
       router.push('/create')
 
     } catch (error) {

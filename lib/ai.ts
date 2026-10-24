@@ -1,4 +1,4 @@
-export async function fetchChecklistSuggestions(prompt: string): Promise<string[]> {
+export async function fetchChecklistSuggestions(prompt: string, provider?: string): Promise<string[]> {
   if (!prompt) {
     console.error('Prompt is empty.');
     return [];
@@ -8,7 +8,7 @@ export async function fetchChecklistSuggestions(prompt: string): Promise<string[
     const res = await fetch('/api/generate-checklist', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subject: prompt }),
+      body: JSON.stringify({ subject: prompt, provider }),
     });
 
     if (!res.ok) {
