@@ -15,8 +15,7 @@ A modern web application for creating, managing, and sharing checklists with the
 - Next.js 14
 - TypeScript
 - Tailwind CSS
-- Prisma
-- PostgreSQL
+- SQLite (better-sqlite3)
 
 ## Getting Started
 
@@ -29,13 +28,10 @@ A modern web application for creating, managing, and sharing checklists with the
 3. Set up your environment variables:
    Create a `.env` file in the root directory with the following variables:
    ```
-   DATABASE_URL="postgresql://user:password@localhost:5432/checklisty"
+   DATABASE_PATH="./data/checklisty.db"
    ```
 
-4. Set up the database:
-   ```bash
-   npx prisma db push
-   ```
+4. The SQLite database and tables are created automatically on first run.
 
 5. Run the development server:
    ```bash

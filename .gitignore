@@ -6,3 +6,5 @@ node_modules
 .netlify
 .env*.local
 *.tsbuildinfo
+
+/data

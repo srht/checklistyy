@@ -1,12 +1,10 @@
 import Link from 'next/link'
-import { pool } from '@/lib/db'
+import { checklists as store } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
 export default async function BrowseChecklistsPage() {
-  const { rows: checklists } = await pool.query(
-    'select * from checklists where published = true order by created_at desc'
-  )
+  const checklists = store.listPublished()
 
   return (
     <div className="mx-auto max-w-3xl p-6">
