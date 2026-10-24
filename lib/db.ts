@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import { randomUUID } from 'crypto'
+import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'crypto'
 import fs from 'fs'
 import path from 'path'
 
@@ -18,6 +18,13 @@ function open() {
       items text not null default '[]',
       author_id text not null,
       published integer not null default 0,
+      created_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    );
+    create table if not exists users (
+      id text primary key,
+      email text not null unique,
+      name text,
+      password_hash text not null,
       created_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     );
     create index if not exists checklists_author_id_idx on checklists(author_id);
@@ -82,4 +89,32 @@ export const checklists = {
   },
   remove: (id: string, authorId: string) =>
     db.prepare('delete from checklists where id = ? and author_id = ?').run(id, authorId).changes > 0,
+}
+
+const hash = (password: string, salt = randomBytes(16).toString('hex')) =>
+  `${salt}:${scryptSync(password, salt, 64).toString('hex')}`
+
+export const users = {
+  findByEmail: (email: string) =>
+    db.prepare('select * from users where email = ?').get(email) as
+      | { id: string; email: string; name: string | null; password_hash: string }
+      | undefined,
+  create: (email: string, password: string, name?: string) => {
+    const id = randomUUID()
+    db.prepare('insert into users (id, email, name, password_hash) values (?,?,?,?)').run(
+      id,
+      email,
+      name || email.split('@')[0],
+      hash(password)
+    )
+    return id
+  },
+  verify: (email: string, password: string) => {
+    const u = users.findByEmail(email)
+    if (!u) return null
+    const [salt, key] = u.password_hash.split(':')
+    const a = Buffer.from(key, 'hex')
+    const b = scryptSync(password, salt, 64)
+    return a.length === b.length && timingSafeEqual(a, b) ? u : null
+  },
 }

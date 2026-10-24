@@ -9,11 +9,21 @@ const hasGoogle = !!process.env.NEXT_PUBLIC_GOOGLE_AUTH
 export default function SignIn() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [error, setError] = useState('')
   const handleSignIn = () => signIn('google', { callbackUrl: '/' })
-  const handleEmailSignIn = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    if (mode === 'signup') {
+      const r = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name }),
+      })
+      if (!r.ok) return setError((await r.json().catch(() => ({}))).error || 'Sign up failed')
+    }
     const res = await signIn('credentials', { email, password, redirect: false })
     if (res?.ok) window.location.href = '/'
     else setError('Invalid email or password')
@@ -28,7 +38,16 @@ export default function SignIn() {
         </div>
 
         <div className="mt-8 space-y-4">
-          <form onSubmit={handleEmailSignIn} className="space-y-2">
+          <form onSubmit={handleSubmit} className="space-y-2">
+            {mode === 'signup' && (
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Name (optional)"
+                className="w-full border rounded-lg px-3 py-2"
+              />
+            )}
             <input
               type="email"
               required
@@ -39,13 +58,22 @@ export default function SignIn() {
             />
             <input
               type="password"
+              required
+              minLength={mode === 'signup' ? 8 : undefined}
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="Password"
+              placeholder={mode === 'signup' ? 'Password (min 8 characters)' : 'Password'}
               className="w-full border rounded-lg px-3 py-2"
             />
             {error && <p className="text-sm text-red-600">{error}</p>}
-            <button type="submit" className="w-full px-4 py-2 rounded-lg text-white bg-primary">Sign in</button>
+            <button type="submit" className="w-full px-4 py-2 rounded-lg text-white bg-primary">{mode === 'signup' ? 'Create account' : 'Sign in'}</button>
+            <button
+              type="button"
+              onClick={() => { setMode(mode === 'signup' ? 'signin' : 'signup'); setError('') }}
+              className="w-full text-sm text-gray-600 hover:underline"
+            >
+              {mode === 'signup' ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+            </button>
           </form>
           {hasGoogle && <button
             onClick={handleSignIn}
