@@ -5,14 +5,18 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 
 const hasGoogle = !!process.env.NEXT_PUBLIC_GOOGLE_AUTH
-const isDev = process.env.NODE_ENV !== 'production'
 
 export default function SignIn() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
   const handleSignIn = () => signIn('google', { callbackUrl: '/' })
-  const handleDevSignIn = (e: React.FormEvent) => {
+  const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
-    signIn('credentials', { email, callbackUrl: '/' })
+    setError('')
+    const res = await signIn('credentials', { email, password, redirect: false })
+    if (res?.ok) window.location.href = '/'
+    else setError('Invalid email or password')
   }
 
   return (
@@ -24,19 +28,25 @@ export default function SignIn() {
         </div>
 
         <div className="mt-8 space-y-4">
-          {isDev && (
-            <form onSubmit={handleDevSignIn} className="flex gap-2">
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="Local dev email"
-                className="flex-1 border rounded-lg px-3 py-2"
-              />
-              <button type="submit" className="px-4 py-2 rounded-lg text-white bg-primary">Sign in</button>
-            </form>
-          )}
+          <form onSubmit={handleEmailSignIn} className="space-y-2">
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="Email"
+              className="w-full border rounded-lg px-3 py-2"
+            />
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Password"
+              className="w-full border rounded-lg px-3 py-2"
+            />
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <button type="submit" className="w-full px-4 py-2 rounded-lg text-white bg-primary">Sign in</button>
+          </form>
           {hasGoogle && <button
             onClick={handleSignIn}
             className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-primary hover:bg-blue-600 transition-colors"
