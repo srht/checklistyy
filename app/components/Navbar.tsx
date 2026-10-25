@@ -10,7 +10,10 @@ export default function Navbar() {
   const { data: session } = useSession()
   const user = session?.user ?? null
 
-  const handleSignOut = () => signOut({ callbackUrl: '/auth/signin' })
+  const handleSignOut = async () => {
+    await signOut({ redirect: false })
+    window.location.href = '/auth/signin'
+  }
 
   return (
     <nav className="bg-white shadow-sm">
