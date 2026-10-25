@@ -6,7 +6,7 @@ import { fetchChecklistSuggestions } from '@/lib/ai'
 import RichItem, { stripMarkdown } from '@/app/components/RichItem'
 
 const inputCls =
-  'w-full rounded-xl border border-slate-300 bg-slate-100 px-4 py-3 text-sm shadow-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500/20'
+  'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500/20'
 
 export default function CreateChecklistPage() {
   const [title, setTitle] = useState('')
@@ -97,7 +97,7 @@ export default function CreateChecklistPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <section className="space-y-3 rounded-2xl border border-slate-300 bg-slate-200/60 p-5">
+        <section className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50/60 p-5">
           <input className={inputCls} placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} required />
           <textarea
             className={inputCls + ' min-h-[90px] resize-y'}
@@ -139,7 +139,7 @@ export default function CreateChecklistPage() {
                     key={s}
                     type="button"
                     onClick={() => addSuggestion(s)}
-                    className="group flex items-center gap-1.5 rounded-full border border-green-300 bg-slate-100 px-3 py-1.5 text-left text-sm text-green-900 shadow-sm transition hover:border-green-500 hover:bg-green-100"
+                    className="group flex items-center gap-1.5 rounded-full border border-green-300 bg-white px-3 py-1.5 text-left text-sm text-green-900 shadow-sm transition hover:border-green-500 hover:bg-green-100"
                   >
                     <span className="font-bold text-green-600 group-hover:scale-110">+</span>
                     {stripMarkdown(s)}
@@ -173,7 +173,7 @@ export default function CreateChecklistPage() {
               </span>
               <textarea
                 rows={1}
-                className={inputCls + ' flex-1 resize-none overflow-hidden leading-relaxed' + (struck.has(i) ? ' line-through text-gray-400 bg-slate-200' : '')}
+                className={inputCls + ' flex-1 resize-none overflow-hidden leading-relaxed' + (struck.has(i) ? ' line-through text-gray-400 bg-gray-50' : '')}
                 readOnly={struck.has(i)}
                 value={item}
                 ref={el => {
@@ -195,7 +195,7 @@ export default function CreateChecklistPage() {
               </button>
             </div>
             {!struck.has(i) && /https?:\/\//.test(item) && (
-              <div className="ml-9 rounded-xl bg-slate-200 p-3">
+              <div className="ml-9 rounded-xl bg-gray-50 p-3">
                 <RichItem text={item} />
               </div>
             )}
@@ -211,7 +211,7 @@ export default function CreateChecklistPage() {
           </button>
         </section>
 
-        <label className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-300 bg-slate-100 px-4 py-3 shadow-sm">
+        <label className="flex cursor-pointer items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
           <span className="text-sm">Let everyone see it?</span>
           <input type="checkbox" className="h-5 w-5 accent-green-600" checked={published} onChange={e => setPublished(e.target.checked)} />
         </label>

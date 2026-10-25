@@ -40,7 +40,7 @@ export default function Home() {
             </Link>
             <Link
               href="/browse"
-              className="bg-slate-100 text-primary border-2 border-primary px-6 py-3 rounded-lg font-semibold hover:bg-slate-200 transition-colors w-full md:w-auto text-center"
+              className="bg-white text-primary border-2 border-primary px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors w-full md:w-auto text-center"
             >
               Browse Checklists
             </Link>
@@ -48,19 +48,19 @@ export default function Home() {
         </div>
 
         <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-slate-100 p-6 rounded-xl shadow-sm">
+          <div className="bg-white p-6 rounded-xl shadow-sm">
             <h3 className="text-xl font-semibold mb-3">Create</h3>
             <p className="text-gray-600">
               Create beautiful, organized checklists for any purpose
             </p>
           </div>
-          <div className="bg-slate-100 p-6 rounded-xl shadow-sm">
+          <div className="bg-white p-6 rounded-xl shadow-sm">
             <h3 className="text-xl font-semibold mb-3">Share</h3>
             <p className="text-gray-600">
               Share your checklists with friends, family, or the world
             </p>
           </div>
-          <div className="bg-slate-100 p-6 rounded-xl shadow-sm">
+          <div className="bg-white p-6 rounded-xl shadow-sm">
             <h3 className="text-xl font-semibold mb-3">Collaborate</h3>
             <p className="text-gray-600">
               Work together with others on shared checklists
@@ -77,7 +77,7 @@ export default function Home() {
           ) : (
             <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {recentChecklists.map(list => (
-                <li key={list.id} className="bg-slate-100 p-6 rounded-xl shadow-sm border border-slate-300">
+                <li key={list.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                   <Link href={`/checklist/${list.id}`}>
                     <h3 className="text-xl font-semibold mb-2 text-lime-300 hover:underline cursor-pointer">{list.title}</h3>
                   </Link>

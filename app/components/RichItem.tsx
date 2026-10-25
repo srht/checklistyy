@@ -11,7 +11,7 @@ function Img({ alt, src }: { alt: string; src: string }) {
   const [failed, setFailed] = useState(false)
   if (failed) return null
   return (
-    <figure className="my-2 overflow-hidden rounded-xl border border-slate-300 bg-slate-200">
+    <figure className="my-2 overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} className="max-h-64 w-full object-cover" />
       {alt && <figcaption className="px-3 py-1 text-xs italic text-gray-500">{alt}</figcaption>}
@@ -47,7 +47,7 @@ function LinkCard({ label, href }: { label: string; href: string }) {
       target="_blank"
       rel="noopener noreferrer"
       onClick={e => e.stopPropagation()}
-      className="my-2 flex overflow-hidden rounded-xl border border-slate-300 bg-slate-100 no-underline shadow-sm transition hover:border-green-400 hover:shadow"
+      className="my-2 flex overflow-hidden rounded-xl border border-gray-200 bg-white no-underline shadow-sm transition hover:border-green-400 hover:shadow"
     >
       {p?.image && imgOk && (
         // eslint-disable-next-line @next/next/no-img-element

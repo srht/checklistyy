@@ -16,7 +16,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-slate-100 shadow-sm">
+    <nav className="bg-white shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -68,10 +68,10 @@ export default function Navbar() {
                 </button>
 
                 {isMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-slate-100 rounded-lg shadow-lg py-2 z-10">
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10">
                     <button
                       onClick={handleSignOut}
-                      className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-slate-200"
+                      className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100"
                     >
                       Sign out
                     </button>
