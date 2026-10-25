@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react'
 export default function Home() {
   const [recentChecklists, setRecentChecklists] = useState<any[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(true);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchRecentChecklists = async () => {
@@ -84,25 +83,7 @@ export default function Home() {
                   </Link>
                   <p className="text-gray-600 text-sm mb-3 line-clamp-3">{list.description || 'No description.'}</p>
                   {list.items && list.items.length > 0 && (
-                    <div className="mb-3">
-                      <ol className="list-decimal list-inside text-gray-800 text-sm space-y-1">
-                        {list.items.slice(0, 3).map((item: any, i: number) => (
-                          <li key={i}>{typeof item === 'string' ? item : item?.text ?? item?.title ?? ''}</li>
-                        ))}
-                        {expanded[list.id] && list.items.slice(3).map((item: any, i: number) => (
-                          <li key={i + 3} value={i + 4}>{typeof item === 'string' ? item : item?.text ?? item?.title ?? ''}</li>
-                        ))}
-                      </ol>
-                      {list.items.length > 3 && (
-                        <button
-                          type="button"
-                          onClick={() => setExpanded(prev => ({ ...prev, [list.id]: !prev[list.id] }))}
-                          className="mt-2 text-sm text-primary hover:underline"
-                        >
-                          {expanded[list.id] ? 'Show less ▲' : `Show ${list.items.length - 3} more ▼`}
-                        </button>
-                      )}
-                    </div>
+                    <p className="text-gray-800 text-sm mt-2">{list.items[0]}</p>
                   )}
                   <p className="text-xs text-gray-400">Created: {new Date(list.created_at).toLocaleDateString()}</p>
                 </li>
