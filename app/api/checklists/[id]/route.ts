@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { checklists } from '@/lib/db'
+import { redactItems } from '@/lib/items'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,11 +13,10 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   if (!UUID.test(params.id)) return notFound()
   const row = checklists.get(params.id)
   if (!row) return notFound()
-  if (!row.published) {
-    const session = await getServerSession(authOptions)
-    if (session?.user?.id !== row.author_id) return notFound()
-  }
-  return NextResponse.json(row)
+  const session = await getServerSession(authOptions)
+  const owner = session?.user?.id === row.author_id
+  if (!row.published && !owner) return notFound()
+  return NextResponse.json(owner ? row : { ...row, items: redactItems(row.items) })
 }
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {

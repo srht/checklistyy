@@ -6,6 +6,9 @@ import { useSession } from 'next-auth/react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import RichItem from '@/app/components/RichItem'
 import PremiumBadge from '@/app/components/PremiumBadge'
+import ActionEditor from '@/app/components/ActionEditor'
+import RunActionButton from '@/app/components/RunActionButton'
+import type { ChecklistItem, ItemAction } from '@/lib/items'
 
 const inputCls =
   'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500/20'
@@ -25,6 +28,7 @@ export default function ChecklistDetailPage() {
   const [titleInput, setTitleInput] = useState('')
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null)
   const [itemInput, setItemInput] = useState('')
+  const [actionInput, setActionInput] = useState<ItemAction | undefined>()
   const [pickerOpen, setPickerOpen] = useState(false)
   const [myLists, setMyLists] = useState<{ id: string; title: string }[]>([])
 
@@ -63,7 +67,8 @@ export default function ChecklistDetailPage() {
 
   const handleEditItem = (idx: number) => {
     setEditingItemIndex(idx)
-    setItemInput(checklist.items[idx])
+    setItemInput(checklist.items[idx].text)
+    setActionInput(checklist.items[idx].action)
   }
 
   const openPicker = async () => {
@@ -84,16 +89,17 @@ export default function ChecklistDetailPage() {
     setPickerOpen(false)
     if (editingItemIndex === null || !checklist) return
     const newItems = [...checklist.items]
-    newItems[editingItemIndex] = itemInput
+    newItems[editingItemIndex] = { text: itemInput, ...(actionInput?.url.trim() && { action: actionInput }) }
     setChecklist({ ...checklist, items: newItems })
     setEditingItemIndex(null)
     setItemInput('')
+    setActionInput(undefined)
   }
 
   const handleSave = async () => {
     setSaving(true)
     setMessage('')
-    const items = checklist.items.filter((_: string, i: number) => !struck[i])
+    const items = checklist.items.filter((_: ChecklistItem, i: number) => !struck[i])
     const res = await fetch(`/api/checklists/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -220,7 +226,7 @@ export default function ChecklistDetailPage() {
         <Droppable droppableId="checklist-items">
           {provided => (
             <ul className="mb-4 space-y-3" {...provided.droppableProps} ref={provided.innerRef}>
-              {checklist.items?.map((item: string, i: number) => (
+              {checklist.items?.map((item: ChecklistItem, i: number) => (
                 <Draggable key={i} draggableId={String(i)} index={i} isDragDisabled={!isOwner}>
                   {(provided, snapshot) => (
                     <li
@@ -240,7 +246,7 @@ export default function ChecklistDetailPage() {
                         className="mt-1 h-5 w-5 shrink-0 accent-green-600"
                       />
                       {isOwner && editingItemIndex === i ? (
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1" onBlur={e => !e.currentTarget.contains(e.relatedTarget as Node | null) && handleSaveItem()}>
                           <textarea
                             ref={el => {
                               if (el) {
@@ -256,9 +262,11 @@ export default function ChecklistDetailPage() {
                               el.style.height = 'auto'
                               el.style.height = el.scrollHeight + 'px'
                             }}
-                            onBlur={handleSaveItem}
                             autoFocus
                           />
+                          <div className="mt-2">
+                            <ActionEditor action={actionInput} onChange={setActionInput} />
+                          </div>
                           <button
                             type="button"
                             onMouseDown={e => e.preventDefault()}
@@ -290,7 +298,16 @@ export default function ChecklistDetailPage() {
                           className={`min-w-0 flex-1 ${struck[i] ? 'text-gray-400 line-through' : checked[i] ? 'opacity-50' : ''} ${isOwner ? 'cursor-pointer' : ''}`}
                           onClick={() => isOwner && !struck[i] && handleEditItem(i)}
                         >
-                          <RichItem text={item} />
+                          <RichItem text={item.text} />
+                          {item.action && (
+                            <RunActionButton
+                              checklistId={checklist.id}
+                              index={i}
+                              action={item.action}
+                              signedIn={!!user}
+                              onSuccess={() => !checked[i] && handleCheck(i)}
+                            />
+                          )}
                         </div>
                       )}
                       {isOwner && (

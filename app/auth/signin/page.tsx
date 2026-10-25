@@ -10,6 +10,7 @@ export default function SignIn() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [signupEmail, setSignupEmail] = useState('')
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [error, setError] = useState('')
   const handleSignIn = () => signIn('google', { callbackUrl: '/' })
@@ -20,13 +21,13 @@ export default function SignIn() {
       const r = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify({ email: signupEmail, password, username: name }),
       })
       if (!r.ok) return setError((await r.json().catch(() => ({}))).error || 'Sign up failed')
     }
-    const res = await signIn('credentials', { email, password, redirect: false })
+    const res = await signIn('credentials', { email: mode === 'signup' ? name : email, password, redirect: false })
     if (res?.ok) window.location.href = '/'
-    else setError('Invalid email or password')
+    else setError('Invalid username/email or password')
   }
 
   return (
@@ -40,22 +41,37 @@ export default function SignIn() {
         <div className="mt-8 space-y-4">
           <form onSubmit={handleSubmit} className="space-y-2">
             {mode === 'signup' && (
+              <>
+                <input
+                  type="text"
+                  required
+                  minLength={3}
+                  maxLength={30}
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="Username"
+                  className="w-full border rounded-lg px-3 py-2"
+                />
+                <input
+                  type="email"
+                  required
+                  value={signupEmail}
+                  onChange={e => setSignupEmail(e.target.value)}
+                  placeholder="Email"
+                  className="w-full border rounded-lg px-3 py-2"
+                />
+              </>
+            )}
+            {mode === 'signin' && (
               <input
                 type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Name (optional)"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="Username or email"
                 className="w-full border rounded-lg px-3 py-2"
               />
             )}
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="Email"
-              className="w-full border rounded-lg px-3 py-2"
-            />
             <input
               type="password"
               required

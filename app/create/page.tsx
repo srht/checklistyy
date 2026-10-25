@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { fetchChecklistSuggestions } from '@/lib/ai'
 import RichItem, { stripMarkdown } from '@/app/components/RichItem'
+import ActionEditor from '@/app/components/ActionEditor'
+import { normalizeItems, type ChecklistItem, type ItemAction } from '@/lib/items'
 
 const inputCls =
   'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500/20'
@@ -11,7 +13,7 @@ const inputCls =
 export default function CreateChecklistPage() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [items, setItems] = useState<string[]>([])
+  const [items, setItems] = useState<ChecklistItem[]>([])
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [published, setPublished] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -33,7 +35,7 @@ export default function CreateChecklistPage() {
         try {
           const parsed = JSON.parse(saved)
           if (parsed.title) setTitle(parsed.title)
-          if (parsed.items) setItems(parsed.items)
+          if (parsed.items) setItems(normalizeItems(parsed.items))
         } catch {}
         localStorage.removeItem('generatedChecklist')
       }
@@ -51,17 +53,19 @@ export default function CreateChecklistPage() {
   }
 
   const addSuggestion = (s: string) => {
-    setItems(prev => [...prev, s])
+    setItems(prev => [...prev, { text: s }])
     setSuggestions(prev => prev.filter(x => x !== s))
   }
   const addAllSuggestions = () => {
-    setItems(prev => [...prev, ...suggestions])
+    setItems(prev => [...prev, ...suggestions.map(text => ({ text }))])
     setSuggestions([])
   }
 
   const handleItemChange = (index: number, value: string) =>
-    setItems(items.map((item, i) => (i === index ? value : item)))
-  const addItem = () => setItems([...items, ''])
+    setItems(items.map((item, i) => (i === index ? { ...item, text: value } : item)))
+  const handleActionChange = (index: number, action?: ItemAction) =>
+    setItems(items.map((item, i) => (i === index ? { text: item.text, ...(action && { action }) } : item)))
+  const addItem = () => setItems([...items, { text: '' }])
   const [struck, setStruck] = useState<Set<number>>(new Set())
   const removeItem = (index: number) =>
     setStruck(prev => {
@@ -175,7 +179,7 @@ export default function CreateChecklistPage() {
                 rows={1}
                 className={inputCls + ' flex-1 resize-none overflow-hidden leading-relaxed' + (struck.has(i) ? ' line-through text-gray-400 bg-gray-50' : '')}
                 readOnly={struck.has(i)}
-                value={item}
+                value={item.text}
                 ref={el => {
                   if (el) {
                     el.style.height = 'auto'
@@ -194,9 +198,14 @@ export default function CreateChecklistPage() {
                 {struck.has(i) ? '↺' : '✕'}
               </button>
             </div>
-            {!struck.has(i) && /https?:\/\//.test(item) && (
+            {!struck.has(i) && /https?:\/\//.test(item.text) && (
               <div className="ml-9 rounded-xl bg-gray-50 p-3">
-                <RichItem text={item} />
+                <RichItem text={item.text} />
+              </div>
+            )}
+            {!struck.has(i) && (
+              <div className="ml-9">
+                <ActionEditor action={item.action} onChange={a => handleActionChange(i, a)} />
               </div>
             )}
             </div>

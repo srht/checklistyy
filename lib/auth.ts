@@ -19,9 +19,9 @@ providers.push(
     name: 'Email',
     credentials: { email: { label: 'Email', type: 'email' }, password: { label: 'Password', type: 'password' } },
     async authorize(credentials) {
-      const email = credentials?.email?.trim().toLowerCase()
-      if (!email || !credentials?.password) return null
-      const u = users.verify(email, credentials.password)
+      const login = credentials?.email?.trim()
+      if (!login || !credentials?.password) return null
+      const u = users.verify(login.includes('@') ? login.toLowerCase() : login, credentials.password)
       return u ? { id: u.id, email: u.email, name: u.name } : null
     },
   })

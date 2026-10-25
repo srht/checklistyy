@@ -2,6 +2,7 @@ import Database from 'better-sqlite3'
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'crypto'
 import fs from 'fs'
 import path from 'path'
+import { normalizeItems, type ChecklistItem } from './items'
 
 const g = globalThis as unknown as { sqlite?: Database.Database }
 
@@ -41,6 +42,8 @@ function open() {
     );
     create index if not exists checklists_author_id_idx on checklists(author_id);
   `)
+  if (!(db.pragma('table_info(users)') as any[]).some(c => c.name === 'username')) db.exec('alter table users add column username text')
+  db.exec('create unique index if not exists users_username_idx on users(username collate nocase)')
   return db
 }
 
@@ -50,7 +53,7 @@ export type ChecklistRow = {
   id: string
   title: string
   description: string | null
-  items: unknown[]
+  items: ChecklistItem[]
   author_id: string
   author_name: string | null
   author_premium: boolean
@@ -59,7 +62,7 @@ export type ChecklistRow = {
 }
 
 function toChecklist(r: any): ChecklistRow {
-  return { ...r, items: JSON.parse(r.items), published: !!r.published, author_premium: !!r.author_premium }
+  return { ...r, items: normalizeItems(JSON.parse(r.items)), published: !!r.published, author_premium: !!r.author_premium }
 }
 
 export const checklists = {
@@ -77,7 +80,7 @@ export const checklists = {
       id,
       c.title,
       c.description ?? null,
-      JSON.stringify(c.items ?? []),
+      JSON.stringify(normalizeItems(c.items)),
       c.author_id,
       c.published ? 1 : 0
     )
@@ -94,7 +97,7 @@ export const checklists = {
       )
       .run(
         c.title ?? null,
-        c.items ? JSON.stringify(c.items) : null,
+        Array.isArray(c.items) ? JSON.stringify(normalizeItems(c.items)) : null,
         typeof c.published === 'boolean' ? (c.published ? 1 : 0) : null,
         id,
         authorId
@@ -113,18 +116,23 @@ export const users = {
     db.prepare('select * from users where email = ?').get(email) as
       | { id: string; email: string; name: string | null; password_hash: string }
       | undefined,
-  create: (email: string, password: string, name?: string) => {
+  findByUsername: (username: string) =>
+    db.prepare('select * from users where username = ? collate nocase').get(username) as
+      | { id: string; email: string; name: string | null; password_hash: string }
+      | undefined,
+  create: (email: string, password: string, username: string) => {
     const id = randomUUID()
-    db.prepare('insert into users (id, email, name, password_hash) values (?,?,?,?)').run(
+    db.prepare('insert into users (id, email, name, username, password_hash) values (?,?,?,?,?)').run(
       id,
       email,
-      name || email.split('@')[0],
+      username,
+      username,
       hash(password)
     )
     return id
   },
-  verify: (email: string, password: string) => {
-    const u = users.findByEmail(email)
+  verify: (login: string, password: string) => {
+    const u = login.includes('@') ? users.findByEmail(login) : users.findByUsername(login)
     if (!u) return null
     const [salt, key] = u.password_hash.split(':')
     const a = Buffer.from(key, 'hex')

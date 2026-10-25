@@ -10,7 +10,7 @@ export default async function BrowseChecklistsPage({ searchParams }: { searchPar
   const all = store.listPublished()
   const checklists = needle
     ? all.filter(l =>
-        [l.title, l.description, ...(Array.isArray(l.items) ? l.items : [])]
+        [l.title, l.description, ...(Array.isArray(l.items) ? l.items.map((i: any) => i.text) : [])]
           .some(s => typeof s === 'string' && s.toLocaleLowerCase().includes(needle)))
     : all
 

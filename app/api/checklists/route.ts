@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { checklists } from '@/lib/db'
+import { redactItems } from '@/lib/items'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +14,7 @@ export async function GET(req: Request) {
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     return NextResponse.json(checklists.listByAuthor(session.user.id))
   }
-  return NextResponse.json(checklists.listPublished(limit))
+  return NextResponse.json(checklists.listPublished(limit).map(r => ({ ...r, items: redactItems(r.items) })))
 }
 
 export async function POST(req: Request) {
