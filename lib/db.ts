@@ -27,6 +27,11 @@ function open() {
       password_hash text not null,
       created_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     );
+    create table if not exists premium_users (
+      user_id text primary key,
+      stripe_session_id text,
+      created_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    );
     create index if not exists checklists_author_id_idx on checklists(author_id);
   `)
   return db
@@ -41,23 +46,24 @@ export type ChecklistRow = {
   items: unknown[]
   author_id: string
   author_name: string | null
+  author_premium: boolean
   published: boolean
   created_at: string
 }
 
 function toChecklist(r: any): ChecklistRow {
-  return { ...r, items: JSON.parse(r.items), published: !!r.published }
+  return { ...r, items: JSON.parse(r.items), published: !!r.published, author_premium: !!r.author_premium }
 }
 
 export const checklists = {
   get: (id: string) => {
-    const r = db.prepare('select c.*, u.name as author_name from checklists c left join users u on u.id = c.author_id where c.id = ?').get(id)
+    const r = db.prepare('select c.*, u.name as author_name, exists(select 1 from premium_users p where p.user_id = c.author_id) as author_premium from checklists c left join users u on u.id = c.author_id where c.id = ?').get(id)
     return r ? toChecklist(r) : undefined
   },
   listPublished: (limit = 100) =>
-    db.prepare('select c.*, u.name as author_name from checklists c left join users u on u.id = c.author_id where c.published = 1 order by c.created_at desc limit ?').all(limit).map(toChecklist),
+    db.prepare('select c.*, u.name as author_name, exists(select 1 from premium_users p where p.user_id = c.author_id) as author_premium from checklists c left join users u on u.id = c.author_id where c.published = 1 order by c.created_at desc limit ?').all(limit).map(toChecklist),
   listByAuthor: (authorId: string) =>
-    db.prepare('select c.*, u.name as author_name from checklists c left join users u on u.id = c.author_id where c.author_id = ? order by c.created_at desc').all(authorId).map(toChecklist),
+    db.prepare('select c.*, u.name as author_name, exists(select 1 from premium_users p where p.user_id = c.author_id) as author_premium from checklists c left join users u on u.id = c.author_id where c.author_id = ? order by c.created_at desc').all(authorId).map(toChecklist),
   create: (c: { title: string; description?: string | null; items?: unknown[]; author_id: string; published?: boolean }) => {
     const id = randomUUID()
     db.prepare('insert into checklists (id, title, description, items, author_id, published) values (?,?,?,?,?,?)').run(
@@ -118,4 +124,10 @@ export const users = {
     const b = scryptSync(password, salt, 64)
     return a.length === b.length && timingSafeEqual(a, b) ? u : null
   },
+}
+
+export const premium = {
+  is: (userId: string) => !!db.prepare('select 1 from premium_users where user_id = ?').get(userId),
+  grant: (userId: string, sessionId?: string) =>
+    db.prepare('insert or ignore into premium_users (user_id, stripe_session_id) values (?,?)').run(userId, sessionId ?? null),
 }

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { checklists as store } from '@/lib/db'
+import PremiumBadge from '@/app/components/PremiumBadge'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,7 +52,7 @@ export default async function BrowseChecklistsPage({ searchParams }: { searchPar
                   </span>
                 )}
               </div>
-              <div className="mt-3 text-xs text-gray-400">{list.author_name || 'Anonymous'} · {new Date(list.created_at).toLocaleDateString()}</div>
+              <div className="mt-3 text-xs text-gray-400"><span className="inline-flex items-center gap-1.5">{list.author_name || 'Anonymous'}{list.author_premium && <PremiumBadge />}</span> · {new Date(list.created_at).toLocaleDateString()}</div>
             </Link>
           </li>
         ))}

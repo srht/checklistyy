@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import PremiumBadge from '@/app/components/PremiumBadge'
 
 export default function MyChecklistsPage() {
   const [checklists, setChecklists] = useState<any[]>([])
@@ -47,7 +48,7 @@ export default function MyChecklistsPage() {
         {checklists.map(list => (
           <li key={list.id} className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:border-green-400 hover:shadow-md">
             <Link href={`/checklist/${list.id}`} className="min-w-0 flex-1">
-              <div className="font-semibold">{list.title}</div>
+              <div className="flex items-center gap-2 font-semibold">{list.title}{list.author_premium && <PremiumBadge />}</div>
               {list.description && <div className="mt-1 line-clamp-2 text-sm text-gray-500">{list.description}</div>}
               <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
                 {Array.isArray(list.items) && <span className="rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-700">{list.items.length} items</span>}

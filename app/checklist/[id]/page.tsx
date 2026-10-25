@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import RichItem from '@/app/components/RichItem'
+import PremiumBadge from '@/app/components/PremiumBadge'
 
 const inputCls =
   'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500/20'
@@ -160,6 +161,7 @@ export default function ChecklistDetailPage() {
           <span className={`rounded-full px-3 py-1 text-xs font-medium ${checklist.published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
             {checklist.published ? 'Published' : 'Private'}
           </span>
+          {checklist.author_premium && <PremiumBadge />}
           {!isOwner && user && (
             <button onClick={handleCopy} type="button" className={`${btn} bg-blue-500 text-white hover:bg-blue-600`}>
               Copy
@@ -279,7 +281,7 @@ export default function ChecklistDetailPage() {
           {message}
         </div>
       )}
-      <div className="mt-4 text-xs text-gray-400">Created by: {checklist.author_name || 'Anonymous'} · Created at: {new Date(checklist.created_at).toLocaleString()}</div>
+      <div className="mt-4 text-xs text-gray-400">Created by: {checklist.author_name || 'Anonymous'}{checklist.author_premium && <PremiumBadge className="ml-1" />} · Created at: {new Date(checklist.created_at).toLocaleString()}</div>
     </div>
   )
 }

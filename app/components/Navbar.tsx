@@ -4,11 +4,18 @@ import Link from 'next/link'
 import { FaCheckSquare } from 'react-icons/fa'
 import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
+import PremiumBadge from '@/app/components/PremiumBadge'
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { data: session } = useSession()
   const user = session?.user ?? null
+  const [isPremium, setIsPremium] = useState(false)
+
+  useEffect(() => {
+    if (!user) return setIsPremium(false)
+    fetch('/api/premium/status').then(r => r.json()).then(d => setIsPremium(d.premium))
+  }, [user?.id])
 
   const handleSignOut = async () => {
     await signOut({ redirect: false })
@@ -65,10 +72,14 @@ export default function Navbar() {
                     </div>
                   )}
                   <span>{user.name || user.email}</span>
+                  {isPremium && <PremiumBadge />}
                 </button>
 
                 {isMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10">
+                    <Link href="/premium" className="block px-4 py-2 text-gray-600 hover:bg-gray-100">
+                      {isPremium ? 'Premium' : 'Get Premium'}
+                    </Link>
                     <button
                       onClick={handleSignOut}
                       className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100"
@@ -128,6 +139,11 @@ export default function Navbar() {
                 className="block text-gray-600 hover:text-primary transition-colors"
               >
                 My Checklists
+              </Link>
+            )}
+            {user && (
+              <Link href="/premium" className="block text-gray-600 hover:text-primary transition-colors">
+                {isPremium ? 'Premium' : 'Get Premium'}
               </Link>
             )}
             {user ? (
