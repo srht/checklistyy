@@ -1,9 +1,32 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
-const TOKEN = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*]+)\*\*|(https?:\/\/[^\s)<]+[^\s)<.,;:!?'"])/g
+const INTERNAL = '\\/checklist\\/[0-9a-fA-F-]{36}'
+const TOKEN = new RegExp(
+  `!\\[([^\\]]*)\\]\\((https?:\\/\\/[^\\s)]+)\\)|\\[([^\\]]+)\\]\\(((?:https?:\\/\\/[^\\s)]+)|${INTERNAL})\\)|` +
+    '\\*\\*([^*]+)\\*\\*|(https?:\\/\\/[^\\s)<]+[^\\s)<.,;:!?\'"])',
+  'g'
+)
+const isInternal = (href: string) => href.startsWith('/checklist/')
+const ONLY = new RegExp(`^\\[([^\\]]+)\\]\\(((?:https?:\\/\\/[^\\s)]+)|${INTERNAL})\\)$`)
 
+function ChecklistCard({ label, href }: { label: string; href: string }) {
+  return (
+    <Link
+      href={href}
+      onClick={e => e.stopPropagation()}
+      className="my-2 flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 p-3 no-underline shadow-sm transition hover:border-green-400 hover:shadow"
+    >
+      <span className="text-lg">🔗</span>
+      <div className="min-w-0">
+        <div className="text-[11px] uppercase tracking-wide text-green-700">Checklist</div>
+        <div className="truncate text-sm font-semibold text-gray-900">{label}</div>
+      </div>
+    </Link>
+  )
+}
 export const stripMarkdown = (s: string) =>
   s.replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/\*\*([^*]+)\*\*/g, '$1').replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim()
 
@@ -70,6 +93,12 @@ function Inline({ text }: { text: string }) {
   while ((m = re.exec(text))) {
     if (m.index > last) out.push(text.slice(last, m.index))
     if (m[2]) out.push(<Img key={m.index} alt={m[1]} src={m[2]} />)
+    else if (m[4] && isInternal(m[4]))
+      out.push(
+        <Link key={m.index} href={m[4]} onClick={e => e.stopPropagation()} className="font-medium text-green-700 underline decoration-green-300 underline-offset-2 hover:text-green-900">
+          {m[3]} 🔗
+        </Link>
+      )
     else if (m[4])
       out.push(
         <a key={m.index} href={m[4]} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="font-medium text-green-700 underline decoration-green-300 underline-offset-2 hover:text-green-900">
@@ -96,8 +125,9 @@ export default function RichItem({ text }: { text: string }) {
       {lines.map((line, i) => {
         const isImg = /^\s*!\[/.test(line)
         const first = i === 0
-        const only = line.trim().match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/)
+        const only = line.trim().match(ONLY)
         const bare = line.trim().match(/^(https?:\/\/\S+)$/)
+        if (only && !first && isInternal(only[2])) return <ChecklistCard key={i} label={only[1]} href={only[2]} />
         if (only && !first) return <LinkCard key={i} label={only[1]} href={only[2]} />
         if (bare && !first) return <LinkCard key={i} label={bare[1]} href={bare[1]} />
         return (

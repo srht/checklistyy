@@ -25,6 +25,8 @@ export default function ChecklistDetailPage() {
   const [titleInput, setTitleInput] = useState('')
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null)
   const [itemInput, setItemInput] = useState('')
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [myLists, setMyLists] = useState<{ id: string; title: string }[]>([])
 
   const notify = (text: string, error = false) => {
     setMessage(text)
@@ -54,7 +56,22 @@ export default function ChecklistDetailPage() {
     setItemInput(checklist.items[idx])
   }
 
+  const openPicker = async () => {
+    if (pickerOpen) return setPickerOpen(false)
+    setPickerOpen(true)
+    if (myLists.length) return
+    const res = await fetch('/api/checklists?mine=1')
+    if (res.ok) setMyLists(await res.json())
+  }
+
+  const linkChecklist = (l: { id: string; title: string }) => {
+    const label = l.title.replace(/[\[\]]/g, '')
+    setItemInput(v => `${v.trimEnd()}\n[${label}](/checklist/${l.id})`)
+    setPickerOpen(false)
+  }
+
   const handleSaveItem = () => {
+    setPickerOpen(false)
     if (editingItemIndex === null || !checklist) return
     const newItems = [...checklist.items]
     newItems[editingItemIndex] = itemInput
@@ -209,24 +226,51 @@ export default function ChecklistDetailPage() {
                         className="mt-1 h-5 w-5 shrink-0 accent-green-600"
                       />
                       {isOwner && editingItemIndex === i ? (
-                        <textarea
-                          ref={el => {
-                            if (el) {
+                        <div className="min-w-0 flex-1">
+                          <textarea
+                            ref={el => {
+                              if (el) {
+                                el.style.height = 'auto'
+                                el.style.height = el.scrollHeight + 'px'
+                              }
+                            }}
+                            className={inputCls + ' resize-none overflow-hidden leading-relaxed'}
+                            value={itemInput}
+                            onChange={e => {
+                              setItemInput(e.target.value)
+                              const el = e.target
                               el.style.height = 'auto'
                               el.style.height = el.scrollHeight + 'px'
-                            }
-                          }}
-                          className={inputCls + ' flex-1 resize-none overflow-hidden leading-relaxed'}
-                          value={itemInput}
-                          onChange={e => {
-                            setItemInput(e.target.value)
-                            const el = e.target
-                            el.style.height = 'auto'
-                            el.style.height = el.scrollHeight + 'px'
-                          }}
-                          onBlur={handleSaveItem}
-                          autoFocus
-                        />
+                            }}
+                            onBlur={handleSaveItem}
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onMouseDown={e => e.preventDefault()}
+                            onClick={openPicker}
+                            className="mt-2 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700 hover:bg-green-100"
+                          >
+                            🔗 Link a checklist
+                          </button>
+                          {pickerOpen && (
+                            <ul className="mt-2 max-h-48 overflow-auto rounded-xl border border-gray-200 bg-white text-sm shadow">
+                              {myLists.filter(l => l.id !== checklist.id).map(l => (
+                                <li key={l.id}>
+                                  <button
+                                    type="button"
+                                    onMouseDown={e => e.preventDefault()}
+                                    onClick={() => linkChecklist(l)}
+                                    className="block w-full truncate px-3 py-2 text-left hover:bg-green-50"
+                                  >
+                                    {l.title}
+                                  </button>
+                                </li>
+                              ))}
+                              {!myLists.some(l => l.id !== checklist.id) && <li className="px-3 py-2 text-gray-400">No other checklists</li>}
+                            </ul>
+                          )}
+                        </div>
                       ) : (
                         <div
                           className={`min-w-0 flex-1 ${struck[i] ? 'text-gray-400 line-through' : checked[i] ? 'opacity-50' : ''} ${isOwner ? 'cursor-pointer' : ''}`}
