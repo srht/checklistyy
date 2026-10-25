@@ -40,6 +40,7 @@ export type ChecklistRow = {
   description: string | null
   items: unknown[]
   author_id: string
+  author_name: string | null
   published: boolean
   created_at: string
 }
@@ -50,13 +51,13 @@ function toChecklist(r: any): ChecklistRow {
 
 export const checklists = {
   get: (id: string) => {
-    const r = db.prepare('select * from checklists where id = ?').get(id)
+    const r = db.prepare('select c.*, u.name as author_name from checklists c left join users u on u.id = c.author_id where c.id = ?').get(id)
     return r ? toChecklist(r) : undefined
   },
   listPublished: (limit = 100) =>
-    db.prepare('select * from checklists where published = 1 order by created_at desc limit ?').all(limit).map(toChecklist),
+    db.prepare('select c.*, u.name as author_name from checklists c left join users u on u.id = c.author_id where c.published = 1 order by c.created_at desc limit ?').all(limit).map(toChecklist),
   listByAuthor: (authorId: string) =>
-    db.prepare('select * from checklists where author_id = ? order by created_at desc').all(authorId).map(toChecklist),
+    db.prepare('select c.*, u.name as author_name from checklists c left join users u on u.id = c.author_id where c.author_id = ? order by c.created_at desc').all(authorId).map(toChecklist),
   create: (c: { title: string; description?: string | null; items?: unknown[]; author_id: string; published?: boolean }) => {
     const id = randomUUID()
     db.prepare('insert into checklists (id, title, description, items, author_id, published) values (?,?,?,?,?,?)').run(

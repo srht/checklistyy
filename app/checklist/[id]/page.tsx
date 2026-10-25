@@ -279,7 +279,7 @@ export default function ChecklistDetailPage() {
           {message}
         </div>
       )}
-      <div className="mt-4 text-xs text-gray-400">Created at: {new Date(checklist.created_at).toLocaleString()}</div>
+      <div className="mt-4 text-xs text-gray-400">Created by: {checklist.author_name || 'Anonymous'} · Created at: {new Date(checklist.created_at).toLocaleString()}</div>
     </div>
   )
 }

@@ -3,14 +3,30 @@ import { checklists as store } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
-export default async function BrowseChecklistsPage() {
-  const checklists = store.listPublished()
+export default async function BrowseChecklistsPage({ searchParams }: { searchParams?: { q?: string } }) {
+  const q = (searchParams?.q || '').trim()
+  const needle = q.toLocaleLowerCase()
+  const all = store.listPublished()
+  const checklists = needle
+    ? all.filter(l =>
+        [l.title, l.description, ...(Array.isArray(l.items) ? l.items : [])]
+          .some(s => typeof s === 'string' && s.toLocaleLowerCase().includes(needle)))
+    : all
 
   return (
     <div className="mx-auto max-w-3xl p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight">All published checklists</h1>
-        <p className="mt-1 text-sm text-gray-500">{checklists.length} public checklists</p>
+        <p className="mt-1 text-sm text-gray-500">{checklists.length} public checklists{q && ` matching "${q}"`}</p>
+        <form action="/browse" className="mt-4">
+          <input
+            type="text"
+            name="q"
+            defaultValue={q}
+            placeholder="Search checklists..."
+            className="w-full rounded-full border-2 border-gray-200 px-5 py-3 focus:border-primary focus:outline-none"
+          />
+        </form>
       </div>
       {checklists.length === 0 && (
         <div className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-400">
@@ -35,7 +51,7 @@ export default async function BrowseChecklistsPage() {
                   </span>
                 )}
               </div>
-              <div className="mt-3 text-xs text-gray-400">{new Date(list.created_at).toLocaleDateString()}</div>
+              <div className="mt-3 text-xs text-gray-400">{list.author_name || 'Anonymous'} · {new Date(list.created_at).toLocaleDateString()}</div>
             </Link>
           </li>
         ))}

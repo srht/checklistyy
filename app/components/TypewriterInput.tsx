@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { FaSearch, FaSpinner } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { fetchChecklistSuggestions } from '@/lib/ai'
 
 const examples = [
@@ -22,6 +23,20 @@ export default function TypewriterInput() {
   const [isTyping, setIsTyping] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [existing, setExisting] = useState<any[]>([])
+
+  useEffect(() => {
+    fetch('/api/checklists')
+      .then(r => (r.ok ? r.json() : []))
+      .then(setExisting)
+      .catch(() => {})
+  }, [])
+
+  const needle = isTyping ? '' : text.trim().toLocaleLowerCase()
+  const matches = needle
+    ? existing.filter(l =>
+        [l.title, l.description].some((s: unknown) => typeof s === 'string' && s.toLocaleLowerCase().includes(needle)))
+    : []
 
   useEffect(() => {
     const currentExample = examples[currentExampleIndex]
@@ -131,6 +146,27 @@ export default function TypewriterInput() {
           )}
         </button>
       </div>
+      {matches.length > 0 && (
+        <div className="mt-3 rounded-2xl border border-gray-200 bg-white text-left shadow-sm overflow-hidden">
+          <div className="px-5 py-2 text-xs font-medium uppercase text-gray-400">Existing checklists</div>
+          <ul>
+            {matches.slice(0, 5).map(l => (
+              <li key={l.id}>
+                <Link href={`/checklist/${l.id}`} className="block px-5 py-2 hover:bg-gray-50">
+                  <div className="font-medium text-gray-900">{l.title}</div>
+                  {l.description && <div className="line-clamp-1 text-sm text-gray-500">{l.description}</div>}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <Link
+            href={`/browse?q=${encodeURIComponent(text.trim())}`}
+            className="block border-t border-gray-100 px-5 py-2 text-sm text-primary hover:bg-gray-50"
+          >
+            See all results ({matches.length})
+          </Link>
+        </div>
+      )}
       {error && (
         <p className="mt-2 text-red-500 text-sm text-center">{error}</p>
       )}
