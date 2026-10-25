@@ -7,7 +7,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import RichItem from '@/app/components/RichItem'
 
 const inputCls =
-  'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500/20'
+  'w-full rounded-xl border border-slate-300 bg-slate-100 px-4 py-3 text-sm shadow-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500/20'
 
 export default function ChecklistDetailPage() {
   const { id } = useParams()
@@ -194,9 +194,9 @@ export default function ChecklistDetailPage() {
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`flex items-start gap-3 rounded-2xl border bg-white p-4 shadow-sm transition ${
-                        snapshot.isDragging ? 'border-green-400 shadow-lg' : 'border-gray-100'
-                      } ${struck[i] ? 'bg-gray-50' : ''}`}
+                      className={`flex items-start gap-3 rounded-2xl border bg-slate-100 p-4 shadow-sm transition ${
+                        snapshot.isDragging ? 'border-green-400 shadow-lg' : 'border-slate-300'
+                      } ${struck[i] ? 'bg-slate-200' : ''}`}
                     >
                       {isOwner && <span className="cursor-move select-none pt-0.5 text-gray-300 hover:text-gray-500" title="Move">&#9776;</span>}
                       <input

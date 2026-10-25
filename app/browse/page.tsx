@@ -22,7 +22,7 @@ export default async function BrowseChecklistsPage() {
           <li key={list.id}>
             <Link
               href={`/checklist/${list.id}`}
-              className="block rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:border-green-400 hover:shadow-md"
+              className="block rounded-2xl border border-slate-300 bg-slate-100 p-5 shadow-sm transition hover:border-green-400 hover:shadow-md"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">

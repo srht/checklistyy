@@ -45,7 +45,7 @@ export default function MyChecklistsPage() {
       )}
       <ul className="space-y-3">
         {checklists.map(list => (
-          <li key={list.id} className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:border-green-400 hover:shadow-md">
+          <li key={list.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-300 bg-slate-100 p-5 shadow-sm transition hover:border-green-400 hover:shadow-md">
             <Link href={`/checklist/${list.id}`} className="min-w-0 flex-1">
               <div className="font-semibold">{list.title}</div>
               {list.description && <div className="mt-1 line-clamp-2 text-sm text-gray-500">{list.description}</div>}
