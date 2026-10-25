@@ -16,7 +16,7 @@ export default function ChecklistDetailPage() {
   const [loading, setLoading] = useState(true)
   const [checked, setChecked] = useState<boolean[]>([])
   const [struck, setStruck] = useState<boolean[]>([])
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const user = session?.user
   const [message, setMessage] = useState('')
   const [isError, setIsError] = useState(false)
@@ -41,14 +41,24 @@ export default function ChecklistDetailPage() {
       setTitleInput(data?.title || '')
       setLoading(false)
       if (data?.items) {
-        setChecked(new Array(data.items.length).fill(false))
+        const saved: boolean[] = user ? await fetch(`/api/progress/${id}`).then(r => (r.ok ? r.json() : [])) : []
+        setChecked(data.items.map((_: unknown, i: number) => !!saved[i]))
         setStruck(new Array(data.items.length).fill(false))
       }
     }
-    fetchChecklist()
-  }, [id])
+    if (status !== 'loading') fetchChecklist()
+  }, [id, status, user?.id])
 
-  const handleCheck = (idx: number) => setChecked(prev => prev.map((v, i) => (i === idx ? !v : v)))
+  const saveProgress = (next: boolean[]) => {
+    if (!user) return
+    fetch(`/api/progress/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ checked: next }) })
+  }
+
+  const handleCheck = (idx: number) => {
+    const next = checked.map((v, i) => (i === idx ? !v : v))
+    setChecked(next)
+    saveProgress(next)
+  }
   const toggleStrike = (idx: number) => setStruck(prev => prev.map((v, i) => (i === idx ? !v : v)))
 
   const handleEditItem = (idx: number) => {
@@ -93,7 +103,9 @@ export default function ChecklistDetailPage() {
     setEditingTitle(false)
     if (!res.ok) return notify('Hata: ' + res.statusText, true)
     notify('Saved!')
-    setChecked(checked.filter((_, i) => !struck[i]))
+    const nextChecked = checked.filter((_, i) => !struck[i])
+    setChecked(nextChecked)
+    saveProgress(nextChecked)
     setStruck(new Array(items.length).fill(false))
     setChecklist({ ...checklist, items, title: titleInput })
   }
@@ -107,7 +119,9 @@ export default function ChecklistDetailPage() {
       return a
     }
     setChecklist({ ...checklist, items: move(checklist.items) })
-    setChecked(move(checked))
+    const nextChecked = move(checked)
+    setChecked(nextChecked)
+    saveProgress(nextChecked)
     setStruck(move(struck))
   }
 

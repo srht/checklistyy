@@ -47,12 +47,20 @@ export default function Navbar() {
               Browse
             </Link>
             {user && (
+<>
               <Link
                 href="/my-checklists"
                 className="text-gray-600 hover:text-primary transition-colors"
               >
                 My Checklists 
               </Link>
+              <Link
+                href="/in-progress"
+                className="text-gray-600 hover:text-primary transition-colors"
+              >
+                In Progress
+              </Link>
+</>
             )}
             {user ? (
               <div className="relative">
@@ -134,12 +142,20 @@ export default function Navbar() {
               Browse
             </Link>
             {user && (
+<>
               <Link
                 href="/my-checklists"
                 className="block text-gray-600 hover:text-primary transition-colors"
               >
                 My Checklists
               </Link>
+              <Link
+                href="/in-progress"
+                className="block text-gray-600 hover:text-primary transition-colors"
+              >
+                In Progress
+              </Link>
+</>
             )}
             {user && (
               <Link href="/premium" className="block text-gray-600 hover:text-primary transition-colors">

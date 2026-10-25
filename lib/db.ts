@@ -32,6 +32,13 @@ function open() {
       stripe_session_id text,
       created_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     );
+    create table if not exists progress (
+      user_id text not null,
+      checklist_id text not null,
+      checked text not null default '[]',
+      updated_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      primary key (user_id, checklist_id)
+    );
     create index if not exists checklists_author_id_idx on checklists(author_id);
   `)
   return db
@@ -130,4 +137,31 @@ export const premium = {
   is: (userId: string) => !!db.prepare('select 1 from premium_users where user_id = ?').get(userId),
   grant: (userId: string, sessionId?: string) =>
     db.prepare('insert or ignore into premium_users (user_id, stripe_session_id) values (?,?)').run(userId, sessionId ?? null),
+}
+
+export const progress = {
+  get: (userId: string, checklistId: string): boolean[] | undefined => {
+    const r = db.prepare('select checked from progress where user_id = ? and checklist_id = ?').get(userId, checklistId) as any
+    return r ? JSON.parse(r.checked) : undefined
+  },
+  set: (userId: string, checklistId: string, checked: boolean[]) => {
+    if (!checked.some(Boolean)) return void db.prepare('delete from progress where user_id = ? and checklist_id = ?').run(userId, checklistId)
+    db.prepare(
+      `insert into progress (user_id, checklist_id, checked) values (?,?,?)
+       on conflict(user_id, checklist_id) do update set checked = excluded.checked, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`
+    ).run(userId, checklistId, JSON.stringify(checked))
+  },
+  listByUser: (userId: string) =>
+    (db
+      .prepare(
+        `select c.id, c.title, c.description, c.items, p.checked, p.updated_at
+         from progress p join checklists c on c.id = p.checklist_id
+         where p.user_id = ? and (c.published = 1 or c.author_id = ?)
+         order by p.updated_at desc`
+      )
+      .all(userId, userId) as any[]).map(r => {
+      const items = JSON.parse(r.items) as unknown[]
+      const checked = (JSON.parse(r.checked) as boolean[]).slice(0, items.length)
+      return { id: r.id, title: r.title, description: r.description, total: items.length, done: checked.filter(Boolean).length, updated_at: r.updated_at }
+    }),
 }
