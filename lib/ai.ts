@@ -16,8 +16,10 @@ export async function fetchChecklistSuggestions(prompt: string, provider?: strin
       return [];
     }
 
-    const data: { items?: string[] } = await res.json();
-    return Array.isArray(data.items) ? data.items : [];
+    const data: { items?: unknown[] } = await res.json();
+    return (Array.isArray(data.items) ? data.items : [])
+      .map(i => (typeof i === 'string' ? i : String((i as { text?: unknown })?.text ?? '')))
+      .filter(Boolean);
   } catch (e) {
     console.error('Error fetching AI suggestions:', e);
     return [];

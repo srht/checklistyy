@@ -70,7 +70,9 @@ export async function POST(request: Request) {
     let items: string[] = []
     try {
       const parsed = JSON.parse(text)
-      items = Array.isArray(parsed.items) ? parsed.items : []
+      items = (Array.isArray(parsed.items) ? parsed.items : [])
+        .map((i: unknown) => (typeof i === 'string' ? i : String((i as { text?: unknown })?.text ?? '')))
+        .filter(Boolean)
     } catch (parseError) {
       console.error('Error parsing response:', parseError)
     }
