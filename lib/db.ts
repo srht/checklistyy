@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'crypto'
+import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'crypto'
 import fs from 'fs'
 import path from 'path'
 import { normalizeItems, type ChecklistItem } from './items'
@@ -39,6 +39,13 @@ function open() {
       checked text not null default '[]',
       updated_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
       primary key (user_id, checklist_id)
+    );
+    create table if not exists api_keys (
+      id text primary key,
+      user_id text not null,
+      name text,
+      key_hash text not null unique,
+      created_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     );
     create index if not exists checklists_author_id_idx on checklists(author_id);
   `)
@@ -180,4 +187,18 @@ export const progress = {
       const checked = (JSON.parse(r.checked) as boolean[]).slice(0, items.length)
       return { id: r.id, title: r.title, description: r.description, total: items.length, done: checked.filter(Boolean).length, updated_at: r.updated_at }
     }),
+}
+
+const sha = (k: string) => createHash('sha256').update(k).digest('hex')
+
+export const apiKeys = {
+  create: (userId: string, name?: string) => {
+    const key = `ck_${randomBytes(24).toString('hex')}`
+    const id = randomUUID()
+    db.prepare('insert into api_keys (id, user_id, name, key_hash) values (?,?,?,?)').run(id, userId, name ?? null, sha(key))
+    return { id, key }
+  },
+  verify: (key: string): string | undefined => (db.prepare('select user_id from api_keys where key_hash = ?').get(sha(key)) as any)?.user_id,
+  list: (userId: string) => db.prepare('select id, name, created_at from api_keys where user_id = ? order by created_at desc').all(userId),
+  remove: (userId: string, id: string) => db.prepare('delete from api_keys where id = ? and user_id = ?').run(id, userId).changes > 0,
 }

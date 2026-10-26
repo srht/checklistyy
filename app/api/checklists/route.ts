@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getSession } from '@/lib/session'
 import { checklists } from '@/lib/db'
 import { redactItems } from '@/lib/items'
 
@@ -10,7 +9,7 @@ export async function GET(req: Request) {
   const sp = new URL(req.url).searchParams
   const limit = Math.min(Number(sp.get('limit')) || 100, 100)
   if (sp.get('mine')) {
-    const session = await getServerSession(authOptions)
+    const session = await getSession(req)
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     return NextResponse.json(checklists.listByAuthor(session.user.id))
   }
@@ -18,7 +17,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await getSession(req)
   if (!session?.user?.id) return NextResponse.json({ error: 'You need to sign in!' }, { status: 401 })
   const { title, description, items, published } = await req.json()
   if (!title) return NextResponse.json({ error: 'Title is required' }, { status: 400 })

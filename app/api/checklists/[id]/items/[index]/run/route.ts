@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getSession } from '@/lib/session'
 import { checklists } from '@/lib/db'
 import { runAction, type RunInputs } from '@/lib/safe-fetch'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request, { params }: { params: { id: string; index: string } }) {
-  const session = await getServerSession(authOptions)
+  const session = await getSession(req)
   if (!session?.user?.id) return NextResponse.json({ error: 'You need to sign in!' }, { status: 401 })
   const row = checklists.get(params.id)
   if (!row || (!row.published && row.author_id !== session.user.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })

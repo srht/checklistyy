@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getSession } from '@/lib/session'
 import { premium } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
-  const session = await getServerSession(authOptions)
+export async function GET(req: Request) {
+  const session = await getSession(req)
   return NextResponse.json({ premium: !!session?.user?.id && premium.is(session.user.id) })
 }

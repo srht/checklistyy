@@ -88,6 +88,9 @@ export default function Navbar() {
                     <Link href="/premium" className="block px-4 py-2 text-gray-600 hover:bg-gray-100">
                       {isPremium ? 'Premium' : 'Get Premium'}
                     </Link>
+                    <Link href="/api-keys" className="block px-4 py-2 text-gray-600 hover:bg-gray-100">
+                      API keys
+                    </Link>
                     <button
                       onClick={handleSignOut}
                       className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100"
@@ -160,6 +163,11 @@ export default function Navbar() {
             {user && (
               <Link href="/premium" className="block text-gray-600 hover:text-primary transition-colors">
                 {isPremium ? 'Premium' : 'Get Premium'}
+              </Link>
+            )}
+            {user && (
+              <Link href="/api-keys" className="block text-gray-600 hover:text-primary transition-colors">
+                API keys
               </Link>
             )}
             {user ? (

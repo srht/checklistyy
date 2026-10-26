@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getSession } from '@/lib/session'
 import { checklists } from '@/lib/db'
 import { redactItems } from '@/lib/items'
 
@@ -9,18 +8,18 @@ export const dynamic = 'force-dynamic'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const notFound = () => NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: { id: string } }) {
   if (!UUID.test(params.id)) return notFound()
   const row = checklists.get(params.id)
   if (!row) return notFound()
-  const session = await getServerSession(authOptions)
+  const session = await getSession(req)
   const owner = session?.user?.id === row.author_id
   if (!row.published && !owner) return notFound()
   return NextResponse.json(owner ? row : { ...row, items: redactItems(row.items) })
 }
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions)
+  const session = await getSession(req)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!UUID.test(params.id)) return notFound()
   const b = await req.json()
@@ -28,8 +27,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   return row ? NextResponse.json(row) : notFound()
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions)
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+  const session = await getSession(req)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!UUID.test(params.id)) return notFound()
   return checklists.remove(params.id, session.user.id) ? NextResponse.json({ ok: true }) : notFound()
