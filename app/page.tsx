@@ -83,7 +83,7 @@ export default function Home() {
                   </Link>
                   <p className="text-gray-600 text-sm mb-3 line-clamp-3">{list.description || 'No description.'}</p>
                   {list.items && list.items.length > 0 && (
-                    <p className="text-gray-800 text-sm mt-2">{list.items[0]}</p>
+                    <p className="text-gray-800 text-sm mt-2">{typeof list.items[0] === 'string' ? list.items[0] : list.items[0]?.text}</p>
                   )}
                   <p className="text-xs text-gray-400">Created: {new Date(list.created_at).toLocaleDateString()}</p>
                 </li>
