@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import PremiumBadge from '@/app/components/PremiumBadge'
 
-export default function Navbar() {
+export default function Navbar() { 
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { data: session } = useSession()
   const user = session?.user ?? null
