@@ -131,6 +131,14 @@ export const users = {
     )
     return id
   },
+  upsertOAuth: (email: string, name?: string | null) => {
+    const e = email.toLowerCase()
+    const u = users.findByEmail(e)
+    if (u) return u.id
+    const id = randomUUID()
+    db.prepare('insert into users (id, email, name, password_hash) values (?,?,?,?)').run(id, e, name ?? e.split('@')[0], hash(randomBytes(32).toString('hex')))
+    return id
+  },
   verify: (login: string, password: string) => {
     const u = login.includes('@') ? users.findByEmail(login) : users.findByUsername(login)
     if (!u) return null

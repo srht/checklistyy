@@ -32,6 +32,10 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: 'jwt' },
   pages: { signIn: '/auth/signin' },
   callbacks: {
+    async jwt({ token, account, profile }) {
+      if (account?.provider === 'google' && profile?.email) token.sub = users.upsertOAuth(profile.email, profile.name)
+      return token
+    },
     async session({ session, token }) {
       if (session.user) session.user.id = token.sub as string
       return session
