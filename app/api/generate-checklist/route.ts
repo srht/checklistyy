@@ -52,6 +52,7 @@ function pickProvider(requested?: string): 'claude' | 'gemini' {
 }
 
 export async function POST(request: Request) {
+  if (request.headers.get('authorization')) return NextResponse.json({ error: 'Generation is not available via API keys' }, { status: 403 })
   try {
     const { subject, provider } = await request.json()
 

@@ -43,7 +43,7 @@ export default function ApiKeysPage() {
   if (status === 'loading') return null
   if (!session?.user) return <div className="mx-auto max-w-xl p-6"><Link href="/auth/signin" className="text-primary underline">Sign in to manage API keys</Link></div>
 
-  const config = JSON.stringify({ mcpServers: { checklisty: { command: 'node', args: ['/path/to/checklisty/mcp/server.mjs'], env: { CHECKLISTY_URL: typeof window === 'undefined' ? '' : window.location.origin, CHECKLISTY_API_KEY: created || 'ck_...' } } } }, null, 2)
+  const config = JSON.stringify({ mcpServers: { checklisty: { url: `${typeof window === 'undefined' ? '' : window.location.origin}/api/mcp`, headers: { Authorization: `Bearer ${created || 'ck_...'}` } } } }, null, 2)
 
   return (
     <div className="mx-auto max-w-xl space-y-6 p-6">
