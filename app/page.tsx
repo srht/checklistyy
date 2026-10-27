@@ -18,7 +18,7 @@ export default function Home() {
           const j = Math.floor(Math.random() * (i + 1));
           [all[i], all[j]] = [all[j], all[i]];
         }
-        setRecentChecklists(all.slice(0, 12));
+        setRecentChecklists(all.slice(0, 9));
       }
       setLoadingRecent(false);
     };
