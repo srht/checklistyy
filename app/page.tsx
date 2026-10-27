@@ -11,15 +11,8 @@ export default function Home() {
   useEffect(() => {
     const fetchRecentChecklists = async () => {
       setLoadingRecent(true);
-      const res = await fetch('/api/checklists?limit=100');
-      if (res.ok) {
-        const all: any[] = await res.json();
-        for (let i = all.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [all[i], all[j]] = [all[j], all[i]];
-        }
-        setRecentChecklists(all.slice(0, 9));
-      }
+      const res = await fetch('/api/checklists?limit=5');
+      if (res.ok) setRecentChecklists(await res.json());
       setLoadingRecent(false);
     };
     fetchRecentChecklists();

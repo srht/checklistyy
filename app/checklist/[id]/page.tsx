@@ -18,7 +18,6 @@ export default function ChecklistDetailPage() {
   const [checklist, setChecklist] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [checked, setChecked] = useState<boolean[]>([])
-  const [members, setMembers] = useState<string[][]>([])
   const [struck, setStruck] = useState<boolean[]>([])
   const { data: session, status } = useSession()
   const user = session?.user
@@ -49,7 +48,6 @@ export default function ChecklistDetailPage() {
         const saved: boolean[] = user ? await fetch(`/api/progress/${id}`).then(r => (r.ok ? r.json() : [])) : []
         setChecked(data.items.map((_: unknown, i: number) => !!saved[i]))
         setStruck(new Array(data.items.length).fill(false))
-        if (data.shared && data.published && user) setMembers(await fetch(`/api/progress/${id}?members=1`).then(r => (r.ok ? r.json() : [])))
       }
     }
     if (status !== 'loading') fetchChecklist()
@@ -57,18 +55,7 @@ export default function ChecklistDetailPage() {
 
   const saveProgress = (next: boolean[]) => {
     if (!user) return
-    fetch(`/api/progress/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ checked: next }) }).then(() => {
-      if (checklist?.shared && checklist.published) fetch(`/api/progress/${id}?members=1`).then(r => (r.ok ? r.json() : [])).then(setMembers)
-    })
-  }
-
-  const toggleShared = async () => {
-    const shared = !checklist.shared
-    const res = await fetch(`/api/checklists/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shared }) })
-    if (!res.ok) return notify('Hata: ' + res.statusText, true)
-    setChecklist({ ...checklist, shared })
-    if (shared && checklist.published) setMembers(await fetch(`/api/progress/${id}?members=1`).then(r => (r.ok ? r.json() : [])))
-    else setMembers([])
+    fetch(`/api/progress/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ checked: next }) })
   }
 
   const handleCheck = (idx: number) => {
@@ -212,12 +199,6 @@ export default function ChecklistDetailPage() {
             {checklist.published ? 'Published' : 'Private'}
           </span>
           {checklist.author_premium && <PremiumBadge />}
-          {isOwner && (
-            <button onClick={toggleShared} type="button" className={`${btn} ${checklist.shared ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-              {checklist.shared ? 'Shared tracking: on' : 'Shared tracking: off'}
-            </button>
-          )}
-          {isOwner && checklist.shared && !checklist.published && <span className="text-xs text-gray-500">Publish the list so others can join.</span>}
           {!isOwner && user && (
             <button onClick={handleCopy} type="button" className={`${btn} bg-blue-500 text-white hover:bg-blue-600`}>
               Copy
@@ -318,7 +299,6 @@ export default function ChecklistDetailPage() {
                           onClick={() => isOwner && !struck[i] && handleEditItem(i)}
                         >
                           <RichItem text={item.text} />
-                          {!!members[i]?.length && <div className="mt-1 text-xs text-purple-600">✓ {members[i].join(', ')}</div>}
                           {item.action && (
                             <RunActionButton
                               checklistId={checklist.id}

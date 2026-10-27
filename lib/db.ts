@@ -50,7 +50,6 @@ function open() {
     create index if not exists checklists_author_id_idx on checklists(author_id);
   `)
   if (!(db.pragma('table_info(users)') as any[]).some(c => c.name === 'username')) db.exec('alter table users add column username text')
-  if (!(db.pragma('table_info(checklists)') as any[]).some(c => c.name === 'shared')) db.exec('alter table checklists add column shared integer not null default 0')
   db.exec('create unique index if not exists users_username_idx on users(username collate nocase)')
   return db
 }
@@ -66,12 +65,11 @@ export type ChecklistRow = {
   author_name: string | null
   author_premium: boolean
   published: boolean
-  shared: boolean
   created_at: string
 }
 
 function toChecklist(r: any): ChecklistRow {
-  return { ...r, items: normalizeItems(JSON.parse(r.items)), published: !!r.published, shared: !!r.shared, author_premium: !!r.author_premium }
+  return { ...r, items: normalizeItems(JSON.parse(r.items)), published: !!r.published, author_premium: !!r.author_premium }
 }
 
 export const checklists = {
@@ -95,21 +93,19 @@ export const checklists = {
     )
     return checklists.get(id)!
   },
-  update: (id: string, authorId: string, c: { title?: string | null; items?: unknown[] | null; published?: boolean | null; shared?: boolean | null }) => {
+  update: (id: string, authorId: string, c: { title?: string | null; items?: unknown[] | null; published?: boolean | null }) => {
     const r = db
       .prepare(
         `update checklists set
            title = coalesce(?, title),
            items = coalesce(?, items),
-           published = coalesce(?, published),
-           shared = coalesce(?, shared)
+           published = coalesce(?, published)
          where id = ? and author_id = ?`
       )
       .run(
         c.title ?? null,
         Array.isArray(c.items) ? JSON.stringify(normalizeItems(c.items)) : null,
         typeof c.published === 'boolean' ? (c.published ? 1 : 0) : null,
-        typeof c.shared === 'boolean' ? (c.shared ? 1 : 0) : null,
         id,
         authorId
       )
@@ -177,14 +173,6 @@ export const progress = {
       `insert into progress (user_id, checklist_id, checked) values (?,?,?)
        on conflict(user_id, checklist_id) do update set checked = excluded.checked, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`
     ).run(userId, checklistId, JSON.stringify(checked))
-  },
-  members: (checklistId: string, length: number): string[][] => {
-    const out: string[][] = Array.from({ length }, () => [])
-    const rows = db
-      .prepare('select coalesce(u.username, u.name, \'?\') as name, p.checked from progress p join users u on u.id = p.user_id where p.checklist_id = ? order by p.updated_at')
-      .all(checklistId) as { name: string; checked: string }[]
-    for (const r of rows) (JSON.parse(r.checked) as boolean[]).forEach((v, i) => v && i < length && out[i].push(r.name))
-    return out
   },
   listByUser: (userId: string) =>
     (db
