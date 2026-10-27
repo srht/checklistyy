@@ -41,13 +41,13 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-center justify-center gap-4">
             <Link
               href="/create"
-              className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors w-full md:w-auto text-center"
+              className="bg-primary px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors w-full md:w-auto text-center"
             >
               Create New Checklist
             </Link>
             <Link
               href="/browse"
-              className="bg-white text-primary border-2 border-primary px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors w-full md:w-auto text-center"
+              className="bg-white text-[#627b00] border-2 border-primary px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors w-full md:w-auto text-center"
             >
               Browse Checklists
             </Link>
@@ -76,7 +76,7 @@ export default function Home() {
         </div>
 
         <div className="container mx-auto px-4 py-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Random Public Checklists</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Recent Checklists</h2>
           {loadingRecent ? (
             <div className="text-center">Loading recent checklists...</div>
           ) : recentChecklists.length === 0 ? (

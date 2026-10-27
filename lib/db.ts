@@ -47,6 +47,13 @@ function open() {
       key_hash text not null unique,
       created_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     );
+    create table if not exists collaborators (
+      checklist_id text not null,
+      user_id text not null,
+      created_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      primary key (checklist_id, user_id)
+    );
+    create index if not exists collaborators_user_idx on collaborators(user_id);
     create index if not exists checklists_author_id_idx on checklists(author_id);
   `)
   if (!(db.pragma('table_info(users)') as any[]).some(c => c.name === 'username')) db.exec('alter table users add column username text')
@@ -80,7 +87,9 @@ export const checklists = {
   listPublished: (limit = 100) =>
     db.prepare('select c.*, u.name as author_name, exists(select 1 from premium_users p where p.user_id = c.author_id) as author_premium from checklists c left join users u on u.id = c.author_id where c.published = 1 order by c.created_at desc limit ?').all(limit).map(toChecklist),
   listByAuthor: (authorId: string) =>
-    db.prepare('select c.*, u.name as author_name, exists(select 1 from premium_users p where p.user_id = c.author_id) as author_premium from checklists c left join users u on u.id = c.author_id where c.author_id = ? order by c.created_at desc').all(authorId).map(toChecklist),
+    db.prepare('select c.*, u.name as author_name, exists(select 1 from premium_users p where p.user_id = c.author_id) as author_premium from checklists c left join users u on u.id = c.author_id where c.author_id = ? or exists(select 1 from collaborators k where k.checklist_id = c.id and k.user_id = ?) order by c.created_at desc').all(authorId, authorId).map(toChecklist),
+  canEdit: (id: string, userId: string) =>
+    !!db.prepare('select 1 from checklists c where c.id = ? and (c.author_id = ? or exists(select 1 from collaborators k where k.checklist_id = c.id and k.user_id = ?))').get(id, userId, userId),
   create: (c: { title: string; description?: string | null; items?: unknown[]; author_id: string; published?: boolean }) => {
     const id = randomUUID()
     db.prepare('insert into checklists (id, title, description, items, author_id, published) values (?,?,?,?,?,?)').run(
@@ -100,19 +109,27 @@ export const checklists = {
            title = coalesce(?, title),
            items = coalesce(?, items),
            published = coalesce(?, published)
-         where id = ? and author_id = ?`
+         where id = ? and (author_id = ? or exists(select 1 from collaborators k where k.checklist_id = checklists.id and k.user_id = ?))`
       )
       .run(
         c.title ?? null,
         Array.isArray(c.items) ? JSON.stringify(normalizeItems(c.items)) : null,
         typeof c.published === 'boolean' ? (c.published ? 1 : 0) : null,
         id,
+        authorId,
         authorId
       )
     return r.changes ? checklists.get(id) : undefined
   },
   remove: (id: string, authorId: string) =>
     db.prepare('delete from checklists where id = ? and author_id = ?').run(id, authorId).changes > 0,
+}
+
+export const collaborators = {
+  list: (id: string) =>
+    db.prepare('select u.id, coalesce(u.username, u.name) as username from collaborators k join users u on u.id = k.user_id where k.checklist_id = ? order by k.created_at').all(id) as { id: string; username: string }[],
+  add: (id: string, userId: string) => db.prepare('insert or ignore into collaborators (checklist_id, user_id) values (?,?)').run(id, userId),
+  remove: (id: string, userId: string) => db.prepare('delete from collaborators where checklist_id = ? and user_id = ?').run(id, userId).changes > 0,
 }
 
 const hash = (password: string, salt = randomBytes(16).toString('hex')) =>
@@ -179,10 +196,10 @@ export const progress = {
       .prepare(
         `select c.id, c.title, c.description, c.items, p.checked, p.updated_at
          from progress p join checklists c on c.id = p.checklist_id
-         where p.user_id = ? and (c.published = 1 or c.author_id = ?)
+         where p.user_id = ? and (c.published = 1 or c.author_id = ? or exists(select 1 from collaborators k where k.checklist_id = c.id and k.user_id = ?))
          order by p.updated_at desc`
       )
-      .all(userId, userId) as any[]).map(r => {
+      .all(userId, userId, userId) as any[]).map(r => {
       const items = JSON.parse(r.items) as unknown[]
       const checked = (JSON.parse(r.checked) as boolean[]).slice(0, items.length)
       return { id: r.id, title: r.title, description: r.description, total: items.length, done: checked.filter(Boolean).length, updated_at: r.updated_at }

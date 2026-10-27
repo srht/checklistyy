@@ -9,7 +9,7 @@ export async function POST(req: Request, { params }: { params: { id: string; ind
   const session = await getSession(req)
   if (!session?.user?.id) return NextResponse.json({ error: 'You need to sign in!' }, { status: 401 })
   const row = checklists.get(params.id)
-  if (!row || (!row.published && row.author_id !== session.user.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (!row || (!row.published && !checklists.canEdit(row.id, session.user.id))) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const action = row.items[Number(params.index)]?.action
   if (!action) return NextResponse.json({ error: 'No action on this item' }, { status: 404 })
   const values: RunInputs = {}

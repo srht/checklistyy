@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
-import { checklists } from '@/lib/db'
+import { checklists, collaborators } from '@/lib/db'
 import { redactItems } from '@/lib/items'
 
 export const dynamic = 'force-dynamic'
@@ -13,9 +13,12 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const row = checklists.get(params.id)
   if (!row) return notFound()
   const session = await getSession(req)
-  const owner = session?.user?.id === row.author_id
-  if (!row.published && !owner) return notFound()
-  return NextResponse.json(owner ? row : { ...row, items: redactItems(row.items) })
+  const uid = session?.user?.id
+  const owner = uid === row.author_id
+  const editor = !!uid && (owner || checklists.canEdit(row.id, uid))
+  if (!row.published && !editor) return notFound()
+  const collabs = editor ? collaborators.list(row.id) : undefined
+  return NextResponse.json(editor ? { ...row, can_edit: true, collaborators: collabs } : { ...row, items: redactItems(row.items) })
 }
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
@@ -23,6 +26,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!UUID.test(params.id)) return notFound()
   const b = await req.json()
+  const existing = checklists.get(params.id)
+  if (existing && existing.author_id !== session.user.id) delete b.published
   const row = checklists.update(params.id, session.user.id, b)
   return row ? NextResponse.json(row) : notFound()
 }

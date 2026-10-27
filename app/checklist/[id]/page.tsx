@@ -29,6 +29,7 @@ export default function ChecklistDetailPage() {
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null)
   const [itemInput, setItemInput] = useState('')
   const [actionInput, setActionInput] = useState<ItemAction | undefined>()
+  const [collabInput, setCollabInput] = useState('')
   const [pickerOpen, setPickerOpen] = useState(false)
   const [myLists, setMyLists] = useState<{ id: string; title: string }[]>([])
 
@@ -167,6 +168,7 @@ export default function ChecklistDetailPage() {
   if (!checklist) return <div className="p-6">Checklist can't be found.</div>
 
   const isOwner = user && checklist.author_id === user.id
+  const canEdit = !!user && (isOwner || !!checklist.can_edit)
   const total = checklist.items?.length || 0
   const doneCount = checked.filter((c, i) => c && !struck[i]).length
   const activeTotal = total - struck.filter(Boolean).length
@@ -177,7 +179,7 @@ export default function ChecklistDetailPage() {
   return (
     <div className="mx-auto max-w-2xl p-6">
       <div className="mb-6">
-        {isOwner && editingTitle ? (
+        {canEdit && editingTitle ? (
           <input
             className={inputCls + ' text-2xl font-bold'}
             value={titleInput}
@@ -187,8 +189,8 @@ export default function ChecklistDetailPage() {
           />
         ) : (
           <h1
-            className={`text-3xl font-bold tracking-tight ${isOwner ? 'cursor-pointer hover:text-green-700' : ''}`}
-            onClick={() => isOwner && setEditingTitle(true)}
+            className={`text-3xl font-bold tracking-tight ${canEdit ? 'cursor-pointer hover:text-green-700' : ''}`}
+            onClick={() => canEdit && setEditingTitle(true)}
           >
             {titleInput}
           </h1>
@@ -199,7 +201,7 @@ export default function ChecklistDetailPage() {
             {checklist.published ? 'Published' : 'Private'}
           </span>
           {checklist.author_premium && <PremiumBadge />}
-          {!isOwner && user && (
+          {!canEdit && user && (
             <button onClick={handleCopy} type="button" className={`${btn} bg-blue-500 text-white hover:bg-blue-600`}>
               Copy
             </button>
@@ -227,7 +229,7 @@ export default function ChecklistDetailPage() {
           {provided => (
             <ul className="mb-4 space-y-3" {...provided.droppableProps} ref={provided.innerRef}>
               {checklist.items?.map((item: ChecklistItem, i: number) => (
-                <Draggable key={i} draggableId={String(i)} index={i} isDragDisabled={!isOwner}>
+                <Draggable key={i} draggableId={String(i)} index={i} isDragDisabled={!canEdit}>
                   {(provided, snapshot) => (
                     <li
                       ref={provided.innerRef}
@@ -237,7 +239,7 @@ export default function ChecklistDetailPage() {
                         snapshot.isDragging ? 'border-green-400 shadow-lg' : 'border-gray-100'
                       } ${struck[i] ? 'bg-gray-50' : ''}`}
                     >
-                      {isOwner && <span className="cursor-move select-none pt-0.5 text-gray-300 hover:text-gray-500" title="Move">&#9776;</span>}
+                      {canEdit && <span className="cursor-move select-none pt-0.5 text-gray-300 hover:text-gray-500" title="Move">&#9776;</span>}
                       <input
                         type="checkbox"
                         checked={checked[i] || false}
@@ -245,7 +247,7 @@ export default function ChecklistDetailPage() {
                         disabled={struck[i]}
                         className="mt-1 h-5 w-5 shrink-0 accent-green-600"
                       />
-                      {isOwner && editingItemIndex === i ? (
+                      {canEdit && editingItemIndex === i ? (
                         <div className="min-w-0 flex-1" onBlur={e => !e.currentTarget.contains(e.relatedTarget as Node | null) && handleSaveItem()}>
                           <textarea
                             ref={el => {
@@ -295,8 +297,8 @@ export default function ChecklistDetailPage() {
                         </div>
                       ) : (
                         <div
-                          className={`min-w-0 flex-1 ${struck[i] ? 'text-gray-400 line-through' : checked[i] ? 'opacity-50' : ''} ${isOwner ? 'cursor-pointer' : ''}`}
-                          onClick={() => isOwner && !struck[i] && handleEditItem(i)}
+                          className={`min-w-0 flex-1 ${struck[i] ? 'text-gray-400 line-through' : checked[i] ? 'opacity-50' : ''} ${canEdit ? 'cursor-pointer' : ''}`}
+                          onClick={() => canEdit && !struck[i] && handleEditItem(i)}
                         >
                           <RichItem text={item.text} />
                           {item.action && (
@@ -310,7 +312,7 @@ export default function ChecklistDetailPage() {
                           )}
                         </div>
                       )}
-                      {isOwner && (
+                      {canEdit && (
                         <button
                           type="button"
                           onMouseDown={e => e.preventDefault()}
@@ -331,7 +333,7 @@ export default function ChecklistDetailPage() {
         </Droppable>
       </DragDropContext>
 
-      {isOwner && (
+      {canEdit && (
         <div className="flex gap-2">
           <button
             onClick={handleSave}
@@ -341,13 +343,52 @@ export default function ChecklistDetailPage() {
           >
             {saving ? 'Saving...' : 'Save'}
           </button>
-          <button
+          {isOwner && <button
             onClick={handleDeleteChecklist}
             type="button"
             className="rounded-xl border border-red-200 px-4 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50"
           >
             Remove Checklist
-          </button>
+          </button>}
+        </div>
+      )}
+
+      {isOwner && (
+        <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+          <div className="mb-2 text-sm font-semibold">Collaborators</div>
+          <form
+            className="flex gap-2"
+            onSubmit={async e => {
+              e.preventDefault()
+              const res = await fetch(`/api/checklists/${id}/collaborators`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: collabInput }) })
+              const data = await res.json()
+              if (!res.ok) return notify(data.error || 'Error', true)
+              setChecklist({ ...checklist, collaborators: data })
+              setCollabInput('')
+              notify('Collaborator added')
+            }}
+          >
+            <input className={inputCls} placeholder="Username" value={collabInput} onChange={e => setCollabInput(e.target.value)} />
+            <button type="submit" className="rounded-xl bg-green-600 px-4 text-sm font-medium text-white hover:bg-green-700">Add</button>
+          </form>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {(checklist.collaborators ?? []).map((c: { id: string; username: string }) => (
+              <li key={c.id} className="flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs">
+                {c.username}
+                <button
+                  type="button"
+                  aria-label="Remove collaborator"
+                  className="text-gray-400 hover:text-red-500"
+                  onClick={async () => {
+                    const res = await fetch(`/api/checklists/${id}/collaborators`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: c.id }) })
+                    if (res.ok) setChecklist({ ...checklist, collaborators: await res.json() })
+                  }}
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
