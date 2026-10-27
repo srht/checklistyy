@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
-import { progress } from '@/lib/db'
+import { checklists, progress } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,6 +11,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const session = await getSession(req)
   if (!session?.user?.id) return unauthorized()
   if (!UUID.test(params.id)) return NextResponse.json([])
+  if (new URL(req.url).searchParams.get('members')) {
+    const c = checklists.get(params.id)
+    return NextResponse.json(c?.shared && c.published ? progress.members(c.id, c.items.length) : [])
+  }
   return NextResponse.json(progress.get(session.user.id, params.id) ?? [])
 }
 
