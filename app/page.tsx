@@ -11,8 +11,15 @@ export default function Home() {
   useEffect(() => {
     const fetchRecentChecklists = async () => {
       setLoadingRecent(true);
-      const res = await fetch('/api/checklists?limit=5');
-      if (res.ok) setRecentChecklists(await res.json());
+      const res = await fetch('/api/checklists?limit=100');
+      if (res.ok) {
+        const all: any[] = await res.json();
+        for (let i = all.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [all[i], all[j]] = [all[j], all[i]];
+        }
+        setRecentChecklists(all.slice(0, 6));
+      }
       setLoadingRecent(false);
     };
     fetchRecentChecklists();
@@ -69,7 +76,7 @@ export default function Home() {
         </div>
 
         <div className="container mx-auto px-4 py-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Recent Public Checklists</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Random Public Checklists</h2>
           {loadingRecent ? (
             <div className="text-center">Loading recent checklists...</div>
           ) : recentChecklists.length === 0 ? (
